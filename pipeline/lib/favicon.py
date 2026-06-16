@@ -96,11 +96,11 @@ def build_favicon_svg(
 
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Ícone">
-  <rect width="32" height="32" rx="8" fill="{theme['bg']}"/>
+  <rect width="32" height="32" rx="8" fill="{theme["bg"]}"/>
   <g
     transform="translate(4 4)"
     fill="none"
-    stroke="{theme['fg']}"
+    stroke="{theme["fg"]}"
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"

@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-
-import pytest
-
 from unittest.mock import patch
 
+import pytest
 from pipeline.lib.instagram import (
     build_source_urls,
     extract_username,
@@ -31,7 +29,10 @@ class TestNormalizeProfileUrl:
 
 class TestExtractUsername:
     def test_extracts_from_profile_url(self):
-        assert extract_username("https://www.instagram.com/cleversonborges.adv/") == "cleversonborges.adv"
+        assert (
+            extract_username("https://www.instagram.com/cleversonborges.adv/")
+            == "cleversonborges.adv"
+        )
 
     def test_rejects_post_url(self):
         with pytest.raises(ValueError, match="perfil"):

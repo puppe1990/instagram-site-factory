@@ -31,7 +31,15 @@ class TestRenderServices:
 class TestRenderHighlights:
     def test_renders_instagram_link(self):
         html_out = render_highlights(
-            [{"title": "Post", "excerpt": "Texto", "url": "https://instagram.com/p/x", "date": "2026-06-01", "likes": "10"}]
+            [
+                {
+                    "title": "Post",
+                    "excerpt": "Texto",
+                    "url": "https://instagram.com/p/x",
+                    "date": "2026-06-01",
+                    "likes": "10",
+                }
+            ]
         )
         assert "Ver no Instagram" in html_out
 
@@ -39,7 +47,14 @@ class TestRenderHighlights:
 class TestRenderLinks:
     def test_marks_primary_whatsapp_link(self):
         html_out = render_links(
-            [{"label": "WhatsApp", "url": "https://wa.me/55", "icon": "whatsapp", "style": "primary"}]
+            [
+                {
+                    "label": "WhatsApp",
+                    "url": "https://wa.me/55",
+                    "icon": "whatsapp",
+                    "style": "primary",
+                }
+            ]
         )
         assert "link-card" in html_out
         assert "link-card--primary" in html_out
@@ -217,7 +232,15 @@ class TestGenerateDemo:
         linktree_html = (result["publish"] / "index.html").read_text(encoding="utf-8")
         site_html = (result["publish"] / "site" / "index.html").read_text(encoding="utf-8")
 
-        assert 'property="og:image" content="https://cleversonborges-adv.netlify.app/assets/og-cleversonborges-adv.jpg"' in linktree_html
-        assert 'property="og:url" content="https://cleversonborges-adv.netlify.app"' in linktree_html
-        assert 'property="og:image" content="https://cleversonborges-adv.netlify.app/site/assets/og-cleversonborges-adv.jpg"' in site_html
+        assert (
+            'property="og:image" content="https://cleversonborges-adv.netlify.app/assets/og-cleversonborges-adv.jpg"'
+            in linktree_html
+        )
+        assert (
+            'property="og:url" content="https://cleversonborges-adv.netlify.app"' in linktree_html
+        )
+        assert (
+            'property="og:image" content="https://cleversonborges-adv.netlify.app/site/assets/og-cleversonborges-adv.jpg"'
+            in site_html
+        )
         assert (result["publish"] / "assets" / "og-cleversonborges-adv.jpg").exists()

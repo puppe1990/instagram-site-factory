@@ -8,7 +8,9 @@ import urllib.request
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-CODE_SCRIPTS_VENV = Path("/Users/matheuspuppe/Desktop/estudo/code_scripts/.venv-instagram/bin/gallery-dl")
+CODE_SCRIPTS_VENV = Path(
+    "/Users/matheuspuppe/Desktop/estudo/code_scripts/.venv-instagram/bin/gallery-dl"
+)
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 VIDEO_EXTENSIONS = {".mp4"}
@@ -45,9 +47,7 @@ def find_gallery_dl() -> str:
     found = shutil.which("gallery-dl")
     if found:
         return found
-    raise RuntimeError(
-        "gallery-dl não encontrado. Rode: pip install -r requirements.txt"
-    )
+    raise RuntimeError("gallery-dl não encontrado. Rode: pip install -r requirements.txt")
 
 
 def run_cmd(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -76,7 +76,9 @@ def download_media(
     username = extract_username(profile_url)
     gallery_dl = find_gallery_dl()
 
-    extensions = ", ".join(repr(ext.lstrip(".")) for ext in sorted(IMAGE_EXTENSIONS | VIDEO_EXTENSIONS))
+    extensions = ", ".join(
+        repr(ext.lstrip(".")) for ext in sorted(IMAGE_EXTENSIONS | VIDEO_EXTENSIONS)
+    )
     media_filter = f"extension in ({extensions})"
 
     cmd = [

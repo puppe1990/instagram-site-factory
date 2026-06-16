@@ -13,12 +13,16 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from pipeline.extract_profile import extract_profile, load_env  # noqa: E402
+from pipeline.extract_profile import extract_profile  # noqa: E402
 from pipeline.generate_demo_html import generate_demo, netlify_site_slug  # noqa: E402
 from pipeline.lib.instagram import extract_username, normalize_profile_url  # noqa: E402
 from pipeline.lib.metadata_enrich import enrich_context  # noqa: E402
 from pipeline.parse_context import parse_context  # noqa: E402
-from pipeline.transcribe_videos import attach_transcripts, load_all_env, transcribe_profile  # noqa: E402
+from pipeline.transcribe_videos import (  # noqa: E402
+    attach_transcripts,
+    load_all_env,
+    transcribe_profile,
+)
 
 
 def write_site_data(output_dir: Path, context: dict, *, publish_url: str | None = None) -> None:
@@ -56,11 +60,17 @@ def main() -> None:
     parser.add_argument("profile", help="URL ou @usuario")
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--limit", type=int, default=40)
-    parser.add_argument("--transcribe-limit", type=int, default=12, help="Vídeos recentes para transcrever")
-    parser.add_argument("--skip-transcribe", action="store_true", help="Pular transcrição dos vídeos")
+    parser.add_argument(
+        "--transcribe-limit", type=int, default=12, help="Vídeos recentes para transcrever"
+    )
+    parser.add_argument(
+        "--skip-transcribe", action="store_true", help="Pular transcrição dos vídeos"
+    )
     parser.add_argument("--cookies-file", default=None)
     parser.add_argument("--deploy", action="store_true", help="Deploy automático no Netlify")
-    parser.add_argument("--publish-url", default=None, help="URL pública do site (ex.: https://usuario.netlify.app)")
+    parser.add_argument(
+        "--publish-url", default=None, help="URL pública do site (ex.: https://usuario.netlify.app)"
+    )
     parser.add_argument("--force", action="store_true", help="Gerar mesmo com score baixo")
     args = parser.parse_args()
 

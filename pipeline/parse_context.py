@@ -18,11 +18,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 PHONE_RE = re.compile(r"(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?(?:9\s?)?\d{4}[-\s]?\d{4}")
 EMOJI_RE = re.compile(
-    "["
-    "\U0001F300-\U0001FAFF"
-    "\U00002600-\U000027BF"
-    "\U0001F1E0-\U0001F1FF"
-    "]+",
+    "[\U0001f300-\U0001faff\U00002600-\U000027bf\U0001f1e0-\U0001f1ff]+",
     flags=re.UNICODE,
 )
 MEME_CAPTION_RE = re.compile(
@@ -30,7 +26,15 @@ MEME_CAPTION_RE = re.compile(
     re.IGNORECASE,
 )
 CREATOR_BIO_SIGNALS = ("sorrir", "palestr", "humor", "meme", "creator", "influencer", "reels")
-TRADITIONAL_BIO_SIGNALS = ("criminalista", "trabalhista", "escritório", "escritorio", "oab", "atuação", "atuacao")
+TRADITIONAL_BIO_SIGNALS = (
+    "criminalista",
+    "trabalhista",
+    "escritório",
+    "escritorio",
+    "oab",
+    "atuação",
+    "atuacao",
+)
 PRICE_LINE_RE = re.compile(
     r"^[\-\*•]?\s*(.+?)\s*(?:[-–:|]\s*)?(R\$\s?\d+(?:[.,]\d{2})?)\s*$",
     re.IGNORECASE | re.MULTILINE,
@@ -175,8 +179,14 @@ def guess_category(profile: dict[str, Any], captions: list[str]) -> str:
         return "Advocacia"
     text = " ".join([profile.get("biography", ""), *captions]).lower()
     rules = [
-        ("Advocacia", ["advogad", "advocacia", "jurídic", "direito", "oab", "processo", "tribunal"]),
-        ("Salão de Beleza", ["manicure", "cabelo", "unha", "salão", "estética", "lash", "sobrancelha"]),
+        (
+            "Advocacia",
+            ["advogad", "advocacia", "jurídic", "direito", "oab", "processo", "tribunal"],
+        ),
+        (
+            "Salão de Beleza",
+            ["manicure", "cabelo", "unha", "salão", "estética", "lash", "sobrancelha"],
+        ),
         ("Clínica", ["clínica", "consultório", "médic", "odont", "fisioterap", "psicolog"]),
         ("Restaurante", ["restaurante", "delivery", "cardápio", "pizza", "burger", "comida"]),
         ("Personal Trainer", ["personal", "treino", "academia", "fitness", "musculação"]),
@@ -203,7 +213,10 @@ def resolve_category_label(profile: dict[str, Any], captions: list[str], categor
         ]
     ).lower()
     specialty_rules = [
-        ("Direito Imobiliário", ["imobiliar", "usucapi", "itbi", "matrícula", "matricula", "regulariz"]),
+        (
+            "Direito Imobiliário",
+            ["imobiliar", "usucapi", "itbi", "matrícula", "matricula", "regulariz"],
+        ),
         ("Direito Tributário", ["tribut", "crédito tribut", "credito tribut"]),
         ("Direito Criminal", ["criminal", "audiência", "audiencia", "delegacia"]),
         ("Direito Trabalhista", ["trabalh", "clt", "empreg"]),
@@ -253,7 +266,10 @@ def extract_city(profile: dict[str, Any], posts: list[dict[str, Any]]) -> str:
         if "📍" in line or CITY_RE.search(cleaned):
             city_line = cleaned.lstrip("📍").strip(" -–|")
             if city_line and len(city_line) <= 80:
-                if city_line.lower() not in {"atendimento presencial e online.", "atendimento presencial e online"}:
+                if city_line.lower() not in {
+                    "atendimento presencial e online.",
+                    "atendimento presencial e online",
+                }:
                     return city_line
 
     for tag in collect_post_tags(posts):
@@ -312,8 +328,12 @@ def gallery_relevance_score(post: dict[str, Any], *, category: str = "") -> tupl
     return (score, post.get("likes", 0), str(post.get("date", "")))
 
 
-def pick_gallery(posts: list[dict[str, Any]], limit: int = 12, *, category: str = "") -> list[dict[str, str]]:
-    images = [post for post in posts if post.get("type") == "image" and not post.get("source_video")]
+def pick_gallery(
+    posts: list[dict[str, Any]], limit: int = 12, *, category: str = ""
+) -> list[dict[str, str]]:
+    images = [
+        post for post in posts if post.get("type") == "image" and not post.get("source_video")
+    ]
     images.sort(
         key=lambda post: gallery_relevance_score(post, category=category),
         reverse=True,
@@ -466,12 +486,30 @@ def extract_topics(
         "Advocacia": [
             ("Regularização de Imóveis", ["regulariz", "matrícula", "matricula", "averba"]),
             ("Usucapião", ["usucapi"]),
-            ("Contratos Imobiliários", ["locador", "locatário", "locatario", "inquilinato", "aluguel", "contrato"]),
+            (
+                "Contratos Imobiliários",
+                ["locador", "locatário", "locatario", "inquilinato", "aluguel", "contrato"],
+            ),
             ("ITBI e Tributos", ["itbi", "tribut", "crédito tribut", "credito tribut"]),
             ("Inventário e Sucessões", ["inventário", "inventario", "herança", "heranca"]),
-            ("Direito Criminal", ["criminal", "réu", "reu", "audiência", "audiencia", "prisão", "prisao", "delegacia"]),
+            (
+                "Direito Criminal",
+                [
+                    "criminal",
+                    "réu",
+                    "reu",
+                    "audiência",
+                    "audiencia",
+                    "prisão",
+                    "prisao",
+                    "delegacia",
+                ],
+            ),
             ("Direito Trabalhista", ["trabalh", "clt", "demiss", "empreg"]),
-            ("Direito de Família", ["família", "familia", "divórc", "divorc", "pensão", "pensao", "guarda"]),
+            (
+                "Direito de Família",
+                ["família", "familia", "divórc", "divorc", "pensão", "pensao", "guarda"],
+            ),
             ("Direito do Consumidor", ["consumidor", "reclama", "procon"]),
             ("Consultoria Jurídica", ["consulta", "orienta", "dúvida", "duvida", "assessor"]),
             ("Atendimento Online", ["online", "videochamada", "remoto"]),
@@ -494,7 +532,9 @@ def extract_topics(
     return found[:6]
 
 
-def build_highlights(posts: list[dict[str, Any]], limit: int = 6, *, category: str = "") -> list[dict[str, str]]:
+def build_highlights(
+    posts: list[dict[str, Any]], limit: int = 6, *, category: str = ""
+) -> list[dict[str, str]]:
     videos = [post for post in posts if post.get("type") == "video"]
     with_transcript = [post for post in videos if (post.get("transcript") or "").strip()]
     without_transcript = [post for post in videos if post not in with_transcript]
@@ -588,7 +628,11 @@ def build_trust_badges(
 
     badges_by_category = {
         "Advocacia": ["Atendimento personalizado", "Consultas online", "Sigilo profissional"],
-        "Salão de Beleza": ["Profissionais qualificados", "Agendamento fácil", "Ambiente acolhedor"],
+        "Salão de Beleza": [
+            "Profissionais qualificados",
+            "Agendamento fácil",
+            "Ambiente acolhedor",
+        ],
         "Clínica": ["Equipe especializada", "Atendimento humanizado", "Horários flexíveis"],
     }
     badges = list(badges_by_category.get(category, ["Atendimento de qualidade", "Foco no cliente"]))
@@ -619,7 +663,10 @@ def extract_services_from_bio(bio: str, category: str) -> list[dict[str, str]]:
             name = part
         elif low.startswith("direito "):
             name = part
-        elif any(token in low for token in ("bancár", "bancar", "imobiliár", "tributár", "criminal", "trabalh")):
+        elif any(
+            token in low
+            for token in ("bancár", "bancar", "imobiliár", "tributár", "criminal", "trabalh")
+        ):
             name = part if part.lower().startswith("direito ") else f"Direito {part}"
         elif "mcmv" in low or "financiamento" in low:
             name = part if "financiamento" in low else "Financiamento MCMV"
@@ -840,11 +887,7 @@ def refine_site_copy(
     else:
         subheadline = bio_clean if bio_clean else f"{short_name} — {category}"
         about = build_about_from_content(profile, category, topics)
-        cta_label = (
-            "Agendar consulta"
-            if category == "Advocacia"
-            else "Agendar pelo WhatsApp"
-        )
+        cta_label = "Agendar consulta" if category == "Advocacia" else "Agendar pelo WhatsApp"
         seo_description = (bio_clean or about)[:155]
         site_bio = bio_clean or subheadline
 
@@ -988,7 +1031,9 @@ def main() -> None:
     site_data = parse_context(context)
 
     site_data_path = output_dir / "site_data.json"
-    site_data_path.write_text(json.dumps(site_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    site_data_path.write_text(
+        json.dumps(site_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     print(f"site_data salvo: {site_data_path}")
     print(
         f"Serviços: {len(site_data['services'])} | Galeria: {len(site_data['gallery'])} "

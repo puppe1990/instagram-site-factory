@@ -29,7 +29,10 @@ class TestEnrichContext:
             "post_url": "https://instagram.com/p/test",
             "post_shortcode": "TEST",
             "display_url": "https://example.com/thumb.jpg",
-            "owner": {"full_name": "Cleverson Borges", "profile_pic_url": "https://example.com/pic.jpg"},
+            "owner": {
+                "full_name": "Cleverson Borges",
+                "profile_pic_url": "https://example.com/pic.jpg",
+            },
             "username": "cleversonborges.adv",
             "fullname": "Cleverson Borges | Advogado",
         }
@@ -61,7 +64,7 @@ class TestEnrichContext:
                 },
             ),
         ):
-            (media / f"2026-06-01_TEST [1]_thumb.jpg").write_bytes(b"img")
+            (media / "2026-06-01_TEST [1]_thumb.jpg").write_bytes(b"img")
             (media / "profile_pic.jpg").write_bytes(b"pic")
             result = enrich_context(output)
 
@@ -102,7 +105,11 @@ class TestEnrichContext:
             patch("pipeline.lib.metadata_enrich.download_profile_picture", return_value=True),
             patch(
                 "pipeline.lib.metadata_enrich.fetch_profile_web_api",
-                return_value={"biography": "", "full_name": "Rafael Garcia Nunes", "external_url": ""},
+                return_value={
+                    "biography": "",
+                    "full_name": "Rafael Garcia Nunes",
+                    "external_url": "",
+                },
             ),
         ):
             result = enrich_context(output)

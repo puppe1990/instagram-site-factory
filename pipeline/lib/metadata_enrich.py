@@ -96,13 +96,17 @@ def enrich_context(output_dir: Path) -> dict[str, Any]:
         )
         profile["full_name"] = full_name
 
-        pic_url = (owner.get("hd_profile_pic_url_info") or {}).get("url") or owner.get("profile_pic_url")
+        pic_url = (owner.get("hd_profile_pic_url_info") or {}).get("url") or owner.get(
+            "profile_pic_url"
+        )
         if pic_url:
             avatar_path = media_dir / "profile_pic.jpg"
             if download_url(pic_url, avatar_path):
                 profile["profile_pic"] = "media/profile_pic.jpg"
     elif profile_username:
-        print(f"Aviso: nenhum metadata de @{profile_username} — usando API pública para foto de perfil.")
+        print(
+            f"Aviso: nenhum metadata de @{profile_username} — usando API pública para foto de perfil."
+        )
 
     _sync_profile_from_web_api(profile)
     _ensure_profile_picture(profile, media_dir)
@@ -112,9 +116,7 @@ def enrich_context(output_dir: Path) -> dict[str, Any]:
         profile["biography"] = infer_bio(profile.get("full_name", ""), captions)
 
     existing_images = {
-        post.get("filename")
-        for post in context.get("posts", [])
-        if post.get("type") == "image"
+        post.get("filename") for post in context.get("posts", []) if post.get("type") == "image"
     }
     posts_by_filename = {post.get("filename"): post for post in context.get("posts", [])}
 
@@ -136,10 +138,16 @@ def enrich_context(output_dir: Path) -> dict[str, Any]:
                     "likes": meta.get("likes") or video_post.get("likes", 0),
                     "tags": meta.get("tags") or video_post.get("tags", []),
                     "post_type": meta.get("type") or meta.get("subcategory") or "",
-                    "caption": (meta.get("description") or meta.get("caption") or video_post.get("caption", "")).strip(),
+                    "caption": (
+                        meta.get("description")
+                        or meta.get("caption")
+                        or video_post.get("caption", "")
+                    ).strip(),
                     "url": meta.get("post_url") or video_post.get("url", ""),
                     "shortcode": meta.get("post_shortcode") or video_post.get("shortcode", ""),
-                    "date": str(meta.get("date") or meta.get("post_date") or video_post.get("date", "")),
+                    "date": str(
+                        meta.get("date") or meta.get("post_date") or video_post.get("date", "")
+                    ),
                 }
             )
 
@@ -183,7 +191,9 @@ def enrich_context(output_dir: Path) -> dict[str, Any]:
     }
     context["readiness"] = score_profile(context)
 
-    context_path.write_text(json.dumps(context, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    context_path.write_text(
+        json.dumps(context, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     print(f"Contexto enriquecido: {context_path}")
     print(f"Imagens disponíveis: {context['stats']['images']}")
     print(f"Score: {context['readiness']['score']}/100")

@@ -133,14 +133,14 @@ def format_transcript(result: dict) -> str:
     utterances = result.get("utterances") or []
     if utterances:
         return " ".join(
-            utterance.get("text", "").strip()
-            for utterance in utterances
-            if utterance.get("text")
+            utterance.get("text", "").strip() for utterance in utterances if utterance.get("text")
         ).strip()
     return (result.get("text") or "").strip()
 
 
-def transcribe_mp3_files(mp3_files: list[Path], transcript_dir: Path, api_key: str) -> dict[str, str]:
+def transcribe_mp3_files(
+    mp3_files: list[Path], transcript_dir: Path, api_key: str
+) -> dict[str, str]:
     transcript_dir.mkdir(parents=True, exist_ok=True)
     transcripts: dict[str, str] = {}
 

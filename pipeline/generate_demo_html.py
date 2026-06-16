@@ -74,8 +74,8 @@ def render_services(services: list[dict[str, str]], profile_style: str = "profes
             f"""
             <article class="service-card">
               <span class="service-card__index">0{index}</span>
-              <h3>{html.escape(item.get('name', 'Serviço'))}</h3>
-              <p>{html.escape(item.get('price', 'Sob consulta'))}</p>
+              <h3>{html.escape(item.get("name", "Serviço"))}</h3>
+              <p>{html.escape(item.get("price", "Sob consulta"))}</p>
             </article>
             """
         )
@@ -212,11 +212,11 @@ def render_highlights(highlights: list[dict[str, str]]) -> str:
         rows.append(
             f"""
             <article class="highlight-card">
-              <h3>{html.escape(item.get('title', 'Destaque'))}</h3>
-              <p>{html.escape(item.get('excerpt', ''))}</p>
+              <h3>{html.escape(item.get("title", "Destaque"))}</h3>
+              <p>{html.escape(item.get("excerpt", ""))}</p>
               <div class="highlight-card__meta">
-                <span>{html.escape(item.get('date', ''))}</span>
-                <span>{html.escape(item.get('likes', '0'))} curtidas</span>
+                <span>{html.escape(item.get("date", ""))}</span>
+                <span>{html.escape(item.get("likes", "0"))} curtidas</span>
                 {link_html}
               </div>
             </article>
@@ -227,9 +227,7 @@ def render_highlights(highlights: list[dict[str, str]]) -> str:
 
 def _render_reel_card(item: dict[str, str]) -> str:
     caption = html.escape(item.get("caption", "")[:72])
-    image_html = (
-        f'<img src="{html.escape(item["src"])}" alt="{html.escape(item.get("alt", ""))}" loading="lazy" />'
-    )
+    image_html = f'<img src="{html.escape(item["src"])}" alt="{html.escape(item.get("alt", ""))}" loading="lazy" />'
     play = (
         '<span class="reel-card__play" aria-hidden="true">'
         '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>'
@@ -314,19 +312,17 @@ def render_links(links: list[dict[str, str]]) -> str:
         icon = ICONS.get(item.get("icon", "link"), ICONS["link"])
         subtitle = item.get("subtitle", "")
         subtitle_html = (
-            f'<span class="link-card__sub">{html.escape(subtitle)}</span>'
-            if subtitle
-            else ""
+            f'<span class="link-card__sub">{html.escape(subtitle)}</span>' if subtitle else ""
         )
         opens_new_tab = item["url"].startswith("http") or item.get("label") == "Ver site completo"
         target = ' target="_blank" rel="noopener"' if opens_new_tab else ""
         primary_class = " link-card--primary" if style == "primary" else ""
         rows.append(
             f"""
-            <a class="link-card{primary_class}" href="{html.escape(item['url'])}"{target}>
+            <a class="link-card{primary_class}" href="{html.escape(item["url"])}"{target}>
               <span class="link-card__icon">{icon}</span>
               <span>
-                <span class="link-card__label">{html.escape(item.get('label', 'Link'))}</span>
+                <span class="link-card__label">{html.escape(item.get("label", "Link"))}</span>
                 {subtitle_html}
               </span>
             </a>
@@ -336,7 +332,9 @@ def render_links(links: list[dict[str, str]]) -> str:
 
 
 def render_schema(site_data: dict) -> str:
-    image = site_data.get("og_image") or site_data.get("avatar_image") or site_data.get("hero_image")
+    image = (
+        site_data.get("og_image") or site_data.get("avatar_image") or site_data.get("hero_image")
+    )
     payload = {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
@@ -358,7 +356,9 @@ def apply_site_template(template: str, site_data: dict) -> str:
     gallery = site_data.get("gallery", [])
     highlights = site_data.get("highlights", [])
     nav_reels = '<a href="#reels">Reels</a>' if gallery else ""
-    display_name = site_data.get("display_name") or site_data.get("headline", site_data.get("business_name", ""))
+    display_name = site_data.get("display_name") or site_data.get(
+        "headline", site_data.get("business_name", "")
+    )
     avatar = site_data.get("avatar_image") or "assets/profile_pic.jpg"
     og_image = site_data.get("og_image") or avatar
     og_url = site_data.get("og_url") or site_data.get("publish_url") or ""
@@ -377,7 +377,9 @@ def apply_site_template(template: str, site_data: dict) -> str:
         "{{AVATAR_IMAGE}}": html.escape(avatar),
         "{{OG_IMAGE}}": html.escape(og_image),
         "{{OG_URL}}": html.escape(og_url),
-        "{{SEO_TITLE}}": html.escape(site_data.get("seo_title", site_data.get("business_name", "Site"))),
+        "{{SEO_TITLE}}": html.escape(
+            site_data.get("seo_title", site_data.get("business_name", "Site"))
+        ),
         "{{SEO_DESCRIPTION}}": html.escape(site_data.get("seo_description", "")),
         "{{SERVICES_EYEBROW}}": html.escape(services_eyebrow),
         "{{SERVICES_TITLE}}": html.escape(services_title),
@@ -411,7 +413,9 @@ def apply_linktree_template(template: str, site_data: dict, *, site_demo_path: s
 
     profile_style = site_data.get("profile_style", "professional")
     theme = THEMES.get(profile_style, THEMES["professional"])
-    display_name = site_data.get("display_name") or site_data.get("headline", site_data.get("business_name", ""))
+    display_name = site_data.get("display_name") or site_data.get(
+        "headline", site_data.get("business_name", "")
+    )
     avatar = site_data.get("avatar_image") or site_data.get("hero_image") or "assets/avatar.jpg"
     og_image = site_data.get("og_image") or avatar
     og_url = site_data.get("og_url") or site_data.get("publish_url") or ""
@@ -566,9 +570,11 @@ def generate_publish_bundle(output_dir: Path, site_data: dict) -> Path:
     publish_site_data["hero_image"] = ""
     publish_site_data["publish_url"] = publish_base
     publish_site_data["og_url"] = f"{publish_base}/site/" if publish_base else ""
-    publish_site_data["og_image"] = absolute_asset_url(
-        publish_base, f"site/assets/og-{netlify_site_slug(username)}.jpg"
-    ) if publish_base and og_image else og_image
+    publish_site_data["og_image"] = (
+        absolute_asset_url(publish_base, f"site/assets/og-{netlify_site_slug(username)}.jpg")
+        if publish_base and og_image
+        else og_image
+    )
 
     shutil.copy2(SITE_TEMPLATE_DIR / "script.js", site_dir / "script.js")
     shutil.copy2(SITE_TEMPLATE_DIR / "styles.css", site_dir / "styles.css")
@@ -598,9 +604,11 @@ def generate_publish_bundle(output_dir: Path, site_data: dict) -> Path:
     publish_linktree_data["avatar_image"] = "assets/avatar.jpg"
     publish_linktree_data["publish_url"] = publish_base
     publish_linktree_data["og_url"] = publish_base
-    publish_linktree_data["og_image"] = absolute_asset_url(
-        publish_base, f"assets/og-{netlify_site_slug(username)}.jpg"
-    ) if publish_base and og_image else og_image
+    publish_linktree_data["og_image"] = (
+        absolute_asset_url(publish_base, f"assets/og-{netlify_site_slug(username)}.jpg")
+        if publish_base and og_image
+        else og_image
+    )
 
     shutil.copy2(LINKTREE_TEMPLATE_DIR / "script.js", publish_dir / "script.js")
     shutil.copy2(LINKTREE_TEMPLATE_DIR / "styles.css", publish_dir / "styles.css")
