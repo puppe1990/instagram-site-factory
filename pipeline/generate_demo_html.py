@@ -1,0 +1,593 @@
+#!/usr/bin/env python3
+"""Gera demo HTML (site + linktree + pacote publish) a partir de site_data.json."""
+
+from __future__ import annotations
+
+import argparse
+import html
+import json
+import re
+import shutil
+import sys
+from copy import deepcopy
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SITE_TEMPLATE_DIR = PROJECT_ROOT / "templates" / "local-demo"
+LINKTREE_TEMPLATE_DIR = PROJECT_ROOT / "templates" / "linktree-demo"
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from pipeline.lib.favicon import write_favicon  # noqa: E402
+from pipeline.lib.link_icons import LINK_ICONS  # noqa: E402
+
+ICONS = LINK_ICONS
+
+
+def slugify(value: str) -> str:
+    value = value.lower().strip()
+    value = re.sub(r"[^\w\s-]", "", value, flags=re.UNICODE)
+    return re.sub(r"[-\s]+", "-", value).strip("-") or "negocio"
+
+
+def render_services(services: list[dict[str, str]], profile_style: str = "professional") -> str:
+    if not services:
+        return """
+        <article class="service-card">
+          <p>Entre em contato para consultar serviços e valores atualizados.</p>
+        </article>
+        """
+    rows = []
+    for index, item in enumerate(services, start=1):
+        rows.append(
+            f"""
+            <article class="service-card">
+              <span class="service-card__index">0{index}</span>
+              <h3>{html.escape(item.get('name', 'Serviço'))}</h3>
+              <p>{html.escape(item.get('price', 'Sob consulta'))}</p>
+            </article>
+            """
+        )
+    return "\n".join(rows)
+
+
+def render_trust_badges(badges: list[str]) -> str:
+    if not badges:
+        return ""
+    return "\n".join(f'<span class="pill">{html.escape(badge)}</span>' for badge in badges)
+
+
+def hero_title(display_name: str, profile_style: str) -> str:
+    name = html.escape(display_name.strip())
+    if profile_style != "creator" or " " not in display_name.strip():
+        return name
+    first, last = display_name.strip().rsplit(" ", 1)
+    return f"{html.escape(first)} <em>{html.escape(last)}</em>"
+
+
+def services_labels(category: str, profile_style: str = "professional") -> tuple[str, str]:
+    if profile_style == "creator":
+        return "Atuação", "O que faço"
+    if category.lower() in {"advocacia", "clínica"}:
+        return "Áreas", "Áreas de atuação"
+    return "Serviços", "O que oferecemos"
+
+
+def services_intro(profile_style: str) -> str:
+    if profile_style == "creator":
+        return "Advocacia séria, comunicação leve — do conteúdo ao atendimento."
+    return "Atendimento dedicado com clareza, estratégia e comunicação direta."
+
+
+def contact_intro(profile_style: str) -> str:
+    if profile_style == "creator":
+        return "Palestras, orientação jurídica ou parcerias — chame no WhatsApp."
+    return "Tire suas dúvidas, entenda suas opções e agende um atendimento pelo WhatsApp."
+
+
+THEMES = {
+    "creator": {
+        "fonts": (
+            "https://fonts.googleapis.com/css2?"
+            "family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800"
+            "&family=Manrope:wght@400;500;600;700;800&display=swap"
+        ),
+    },
+    "professional": {
+        "fonts": (
+            "https://fonts.googleapis.com/css2?"
+            "family=Inter:wght@400;500;600;700"
+            "&family=Playfair+Display:wght@600;700&display=swap"
+        ),
+    },
+}
+
+
+def favicon_colors(site_data: dict, *, variant: str) -> tuple[str | None, str | None]:
+    palette = site_data.get("theme_palette") or {}
+    bg = palette.get("favicon_bg") or palette.get("hero-bg")
+    fg = palette.get("favicon_fg") or palette.get("accent")
+    if variant == "linktree" and not palette.get("favicon_bg"):
+        bg = palette.get("hero-bg") or bg
+    return bg, fg
+
+
+def render_theme_override(site_data: dict) -> str:
+    palette = site_data.get("theme_palette")
+    if not palette:
+        return ""
+
+    profile_style = html.escape(site_data.get("profile_style", "professional"))
+    vars_lines = []
+    for key, value in palette.items():
+        if key.startswith("favicon_"):
+            continue
+        css_key = key.replace("_", "-")
+        vars_lines.append(f"  --{css_key}: {value};")
+
+    vars_block = "\n".join(vars_lines)
+    return f"""<style>
+html[data-style="{profile_style}"],
+[data-style="{profile_style}"] {{
+{vars_block}
+}}
+[data-style="{profile_style}"] .demo-ribbon {{
+  background: linear-gradient(90deg, var(--ink) 0%, var(--hero-bg) 100%);
+  color: var(--hero-text);
+}}
+[data-style="{profile_style}"] .btn--primary {{
+  background: var(--btn-bg, var(--hero-bg));
+  color: var(--btn-text, var(--hero-text));
+}}
+[data-style="{profile_style}"] .btn--primary:hover {{
+  background: var(--ink);
+}}
+[data-style="{profile_style}"] .hero__title em {{
+  color: var(--accent);
+  font-style: normal;
+}}
+[data-style="{profile_style}"] .hero__eyebrow,
+[data-style="{profile_style}"] .section-head__eyebrow {{
+  color: var(--accent);
+  letter-spacing: 0.16em;
+}}
+[data-style="{profile_style}"] .link-card--primary {{
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 24%, var(--bg-elevated, var(--bg-soft))),
+    var(--bg-elevated, var(--bg-soft))
+  );
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  box-shadow: 0 14px 36px var(--accent-glow);
+}}
+[data-style="{profile_style}"] .profile__category {{
+  color: var(--accent);
+}}
+</style>"""
+
+
+def render_highlights(highlights: list[dict[str, str]]) -> str:
+    if not highlights:
+        return ""
+
+    rows = []
+    for item in highlights[:6]:
+        link = item.get("url", "")
+        link_html = (
+            f'<a href="{html.escape(link)}" target="_blank" rel="noopener">Ver no Instagram →</a>'
+            if link
+            else ""
+        )
+        rows.append(
+            f"""
+            <article class="highlight-card">
+              <h3>{html.escape(item.get('title', 'Destaque'))}</h3>
+              <p>{html.escape(item.get('excerpt', ''))}</p>
+              <div class="highlight-card__meta">
+                <span>{html.escape(item.get('date', ''))}</span>
+                <span>{html.escape(item.get('likes', '0'))} curtidas</span>
+                {link_html}
+              </div>
+            </article>
+            """
+        )
+    return "\n".join(rows)
+
+
+def _render_reel_card(item: dict[str, str]) -> str:
+    caption = html.escape(item.get("caption", "")[:72])
+    image_html = (
+        f'<img src="{html.escape(item["src"])}" alt="{html.escape(item.get("alt", ""))}" loading="lazy" />'
+    )
+    play = (
+        '<span class="reel-card__play" aria-hidden="true">'
+        '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>'
+    )
+    body = (
+        f'{image_html}{play}<div class="reel-card__shade"></div>'
+        f'<p class="reel-card__meta">{caption}</p>'
+    )
+    if item.get("url"):
+        return (
+            f'<a class="reel-card" href="{html.escape(item["url"])}" '
+            f'target="_blank" rel="noopener">{body}</a>'
+        )
+    return f'<article class="reel-card">{body}</article>'
+
+
+def render_gallery(gallery: list[dict[str, str]]) -> tuple[str, str]:
+    if not gallery:
+        return "", ""
+
+    strip_items = [_render_reel_card(item) for item in gallery[:10]]
+    grid_items = [_render_reel_card(item) for item in gallery[:12]]
+    return "\n".join(strip_items), "\n".join(grid_items)
+
+
+def render_gallery_section(gallery: list[dict[str, str]], profile_style: str) -> str:
+    strip, grid = render_gallery(gallery)
+    if not strip:
+        return ""
+
+    eyebrow = "Reels" if profile_style == "creator" else "Galeria"
+    title = "Conteúdos em destaque" if profile_style == "creator" else "Trabalhos recentes"
+    intro = (
+        "Os posts que mais engajam — direto do Instagram."
+        if profile_style == "creator"
+        else "Uma seleção dos conteúdos publicados no perfil."
+    )
+    return f"""
+      <section class="section section--alt" id="reels">
+        <div class="container">
+          <div class="section-head reveal">
+            <p class="section-head__eyebrow">{eyebrow}</p>
+            <h2 class="section-head__title">{title}</h2>
+            <p class="section-head__lead">{intro}</p>
+          </div>
+          <div class="reel-strip reveal">{strip}</div>
+          <div class="reel-grid reveal">{grid}</div>
+        </div>
+      </section>
+    """
+
+
+def render_highlights_section(highlights: list[dict[str, str]], profile_style: str) -> str:
+    cards = render_highlights(highlights)
+    if not cards:
+        return ""
+
+    if profile_style != "creator":
+        return ""
+
+    return f"""
+      <section class="section" id="destaques">
+        <div class="container">
+          <div class="section-head reveal">
+            <p class="section-head__eyebrow">Destaques</p>
+            <h2 class="section-head__title">No ar recentemente</h2>
+            <p class="section-head__lead">Trechos e legendas dos conteúdos com mais repercussão.</p>
+          </div>
+          <div class="highlight-grid reveal">{cards}</div>
+        </div>
+      </section>
+    """
+
+
+def render_links(links: list[dict[str, str]]) -> str:
+    if not links:
+        return '<p class="links-empty">Links em atualização.</p>'
+
+    rows = []
+    for item in links:
+        style = item.get("style", "default")
+        icon = ICONS.get(item.get("icon", "link"), ICONS["link"])
+        subtitle = item.get("subtitle", "")
+        subtitle_html = (
+            f'<span class="link-card__sub">{html.escape(subtitle)}</span>'
+            if subtitle
+            else ""
+        )
+        opens_new_tab = item["url"].startswith("http") or item.get("label") == "Ver site completo"
+        target = ' target="_blank" rel="noopener"' if opens_new_tab else ""
+        primary_class = " link-card--primary" if style == "primary" else ""
+        rows.append(
+            f"""
+            <a class="link-card{primary_class}" href="{html.escape(item['url'])}"{target}>
+              <span class="link-card__icon">{icon}</span>
+              <span>
+                <span class="link-card__label">{html.escape(item.get('label', 'Link'))}</span>
+                {subtitle_html}
+              </span>
+            </a>
+            """
+        )
+    return "\n".join(rows)
+
+
+def render_schema(site_data: dict) -> str:
+    payload = {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": site_data.get("business_name"),
+        "description": site_data.get("seo_description"),
+        "url": site_data.get("instagram_url"),
+        "image": site_data.get("avatar_image") or site_data.get("hero_image"),
+        "telephone": f"+{site_data['phone']}" if site_data.get("phone") else None,
+    }
+    payload = {key: value for key, value in payload.items() if value}
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def apply_site_template(template: str, site_data: dict) -> str:
+    profile_style = site_data.get("profile_style", "professional")
+    category_base = site_data.get("category_base", site_data.get("category", ""))
+    theme = THEMES.get(profile_style, THEMES["professional"])
+    services_eyebrow, services_title = services_labels(category_base, profile_style)
+    gallery = site_data.get("gallery", [])
+    highlights = site_data.get("highlights", [])
+    nav_reels = '<a href="#reels">Reels</a>' if gallery else ""
+    display_name = site_data.get("display_name") or site_data.get("headline", site_data.get("business_name", ""))
+    avatar = site_data.get("avatar_image") or "assets/profile_pic.jpg"
+    replacements = {
+        "{{PROFILE_STYLE}}": html.escape(profile_style),
+        "{{BUSINESS_NAME}}": html.escape(site_data.get("business_name", "")),
+        "{{DISPLAY_NAME}}": html.escape(display_name),
+        "{{HERO_TITLE}}": hero_title(display_name, profile_style),
+        "{{CATEGORY}}": html.escape(site_data.get("category", "")),
+        "{{HEADLINE}}": html.escape(site_data.get("headline", "")),
+        "{{SUBHEADLINE}}": html.escape(site_data.get("subheadline", "")),
+        "{{BIO}}": html.escape(site_data.get("bio", site_data.get("subheadline", ""))),
+        "{{ABOUT}}": html.escape(site_data.get("about", "")),
+        "{{CTA_LABEL}}": html.escape(site_data.get("cta_label", "Fale conosco")),
+        "{{WHATSAPP_URL}}": html.escape(site_data.get("whatsapp_url", "#contato")),
+        "{{AVATAR_IMAGE}}": html.escape(avatar),
+        "{{SEO_TITLE}}": html.escape(site_data.get("seo_title", site_data.get("business_name", "Site"))),
+        "{{SEO_DESCRIPTION}}": html.escape(site_data.get("seo_description", "")),
+        "{{SERVICES_EYEBROW}}": html.escape(services_eyebrow),
+        "{{SERVICES_TITLE}}": html.escape(services_title),
+        "{{SERVICES_INTRO}}": html.escape(services_intro(profile_style)),
+        "{{CONTACT_INTRO}}": html.escape(contact_intro(profile_style)),
+        "{{SERVICES_HTML}}": render_services(site_data.get("services", []), profile_style),
+        "{{TRUST_HTML}}": render_trust_badges(site_data.get("trust_badges", [])),
+        "{{GALLERY_SECTION}}": render_gallery_section(gallery, profile_style),
+        "{{HIGHLIGHTS_SECTION}}": render_highlights_section(highlights, profile_style),
+        "{{NAV_REELS}}": nav_reels,
+        "{{FONT_LINK}}": theme["fonts"],
+        "{{THEME_OVERRIDE}}": render_theme_override(site_data),
+        "{{SCHEMA_JSON}}": render_schema(site_data),
+        "{{INSTAGRAM_URL}}": html.escape(site_data.get("instagram_url", "#")),
+        "{{CITY}}": html.escape(site_data.get("city", "")),
+        "{{USERNAME}}": html.escape(site_data.get("username", "")),
+    }
+    result = template
+    for key, value in replacements.items():
+        result = result.replace(key, value)
+    return result
+
+
+def apply_linktree_template(template: str, site_data: dict, *, site_demo_path: str) -> str:
+    links = []
+    for item in site_data.get("links", []):
+        link = dict(item)
+        if link.get("label") == "Ver site completo":
+            link["url"] = site_demo_path
+        links.append(link)
+
+    profile_style = site_data.get("profile_style", "professional")
+    theme = THEMES.get(profile_style, THEMES["professional"])
+    display_name = site_data.get("display_name") or site_data.get("headline", site_data.get("business_name", ""))
+    avatar = site_data.get("avatar_image") or site_data.get("hero_image") or "assets/avatar.jpg"
+    replacements = {
+        "{{PROFILE_STYLE}}": html.escape(profile_style),
+        "{{BUSINESS_NAME}}": html.escape(site_data.get("business_name", "")),
+        "{{DISPLAY_NAME}}": html.escape(display_name),
+        "{{HERO_TITLE}}": hero_title(display_name, profile_style),
+        "{{BIO}}": html.escape(site_data.get("bio", site_data.get("subheadline", ""))),
+        "{{CATEGORY}}": html.escape(site_data.get("category", "")),
+        "{{AVATAR_IMAGE}}": html.escape(avatar),
+        "{{SEO_DESCRIPTION}}": html.escape(site_data.get("seo_description", "")),
+        "{{LINKS_HTML}}": render_links(links),
+        "{{FONT_LINK}}": theme["fonts"],
+        "{{THEME_OVERRIDE}}": render_theme_override(site_data),
+        "{{INSTAGRAM_URL}}": html.escape(site_data.get("instagram_url", "#")),
+        "{{USERNAME}}": html.escape(site_data.get("username", "")),
+    }
+    result = template
+    for key, value in replacements.items():
+        result = result.replace(key, value)
+    return result
+
+
+def copy_gallery_assets(media_dir: Path, assets_dir: Path, gallery: list[dict[str, str]]) -> int:
+    copied = 0
+    if not media_dir.exists():
+        return copied
+    for gallery_item in gallery:
+        filename = Path(gallery_item["src"]).name
+        source = media_dir / filename
+        if source.exists():
+            shutil.copy2(source, assets_dir / filename)
+            copied += 1
+    return copied
+
+
+def copy_profile_avatar(media_dir: Path, assets_dir: Path) -> bool:
+    """Copia media/profile_pic.jpg para assets/avatar.jpg (foto de perfil no linktree)."""
+    profile_pic = media_dir / "profile_pic.jpg"
+    if not profile_pic.exists():
+        return False
+    shutil.copy2(profile_pic, assets_dir / "avatar.jpg")
+    if not (assets_dir / "profile_pic.jpg").exists():
+        shutil.copy2(profile_pic, assets_dir / "profile_pic.jpg")
+    return True
+
+
+def generate_site_demo(output_dir: Path, site_data: dict) -> Path:
+    demo_dir = output_dir / "demo"
+    assets_dir = demo_dir / "assets"
+
+    if demo_dir.exists():
+        shutil.rmtree(demo_dir)
+    demo_dir.mkdir(parents=True)
+    assets_dir.mkdir(parents=True)
+
+    media_dir = output_dir / "media"
+    copied = 1 if copy_profile_avatar(media_dir, assets_dir) else 0
+    copied += copy_gallery_assets(media_dir, assets_dir, site_data.get("gallery", []))
+
+    for filename in ("script.js", "netlify.toml", "styles.css"):
+        shutil.copy2(SITE_TEMPLATE_DIR / filename, demo_dir / filename)
+    favicon_bg, favicon_fg = favicon_colors(site_data, variant="site")
+    write_favicon(
+        demo_dir,
+        site_data.get("category_base", site_data.get("category", "")),
+        variant="site",
+        bg=favicon_bg,
+        fg=favicon_fg,
+    )
+
+    template = (SITE_TEMPLATE_DIR / "index.html").read_text(encoding="utf-8")
+    rendered = apply_site_template(template, site_data)
+    (demo_dir / "index.html").write_text(rendered, encoding="utf-8")
+
+    print(f"Site demo: {demo_dir} ({copied} imagens)")
+    return demo_dir
+
+
+def generate_linktree_demo(output_dir: Path, site_data: dict) -> Path:
+    linktree_dir = output_dir / "linktree"
+    assets_dir = linktree_dir / "assets"
+
+    if linktree_dir.exists():
+        shutil.rmtree(linktree_dir)
+    linktree_dir.mkdir(parents=True)
+    assets_dir.mkdir(parents=True)
+
+    media_dir = output_dir / "media"
+    copied = 1 if copy_profile_avatar(media_dir, assets_dir) else 0
+    if copied:
+        site_data = deepcopy(site_data)
+        site_data["avatar_image"] = "assets/avatar.jpg"
+
+    shutil.copy2(LINKTREE_TEMPLATE_DIR / "script.js", linktree_dir / "script.js")
+    shutil.copy2(LINKTREE_TEMPLATE_DIR / "styles.css", linktree_dir / "styles.css")
+    favicon_bg, favicon_fg = favicon_colors(site_data, variant="linktree")
+    write_favicon(
+        linktree_dir,
+        site_data.get("category_base", site_data.get("category", "")),
+        variant="linktree",
+        bg=favicon_bg,
+        fg=favicon_fg,
+    )
+
+    template = (LINKTREE_TEMPLATE_DIR / "index.html").read_text(encoding="utf-8")
+    rendered = apply_linktree_template(
+        template,
+        site_data,
+        site_demo_path=site_data.get("site_demo_path", "../demo/index.html"),
+    )
+    (linktree_dir / "index.html").write_text(rendered, encoding="utf-8")
+
+    print(f"Linktree demo: {linktree_dir} ({copied} imagens)")
+    return linktree_dir
+
+
+def generate_publish_bundle(output_dir: Path, site_data: dict) -> Path:
+    publish_dir = output_dir / "publish"
+    site_dir = publish_dir / "site"
+    assets_dir = site_dir / "assets"
+    linktree_assets = publish_dir / "assets"
+
+    if publish_dir.exists():
+        shutil.rmtree(publish_dir)
+    site_dir.mkdir(parents=True)
+    assets_dir.mkdir(parents=True)
+    linktree_assets.mkdir(parents=True)
+
+    media_dir = output_dir / "media"
+    copied = 1 if copy_profile_avatar(media_dir, assets_dir) else 0
+    copied += copy_gallery_assets(media_dir, assets_dir, site_data.get("gallery", []))
+    for asset in assets_dir.iterdir():
+        shutil.copy2(asset, linktree_assets / asset.name)
+    copy_profile_avatar(media_dir, linktree_assets)
+
+    publish_site_data = deepcopy(site_data)
+    publish_site_data["avatar_image"] = "assets/profile_pic.jpg"
+    publish_site_data["hero_image"] = ""
+
+    shutil.copy2(SITE_TEMPLATE_DIR / "script.js", site_dir / "script.js")
+    shutil.copy2(SITE_TEMPLATE_DIR / "styles.css", site_dir / "styles.css")
+    favicon_bg, favicon_fg = favicon_colors(site_data, variant="site")
+    write_favicon(
+        site_dir,
+        site_data.get("category_base", site_data.get("category", "")),
+        variant="site",
+        bg=favicon_bg,
+        fg=favicon_fg,
+    )
+    write_favicon(
+        publish_dir,
+        site_data.get("category_base", site_data.get("category", "")),
+        variant="linktree",
+        bg=favicon_bg,
+        fg=favicon_fg,
+    )
+
+    site_template = (SITE_TEMPLATE_DIR / "index.html").read_text(encoding="utf-8")
+    (site_dir / "index.html").write_text(
+        apply_site_template(site_template, publish_site_data),
+        encoding="utf-8",
+    )
+
+    publish_linktree_data = deepcopy(site_data)
+    publish_linktree_data["avatar_image"] = "assets/avatar.jpg"
+
+    shutil.copy2(LINKTREE_TEMPLATE_DIR / "script.js", publish_dir / "script.js")
+    shutil.copy2(LINKTREE_TEMPLATE_DIR / "styles.css", publish_dir / "styles.css")
+
+    linktree_template = (LINKTREE_TEMPLATE_DIR / "index.html").read_text(encoding="utf-8")
+    (publish_dir / "index.html").write_text(
+        apply_linktree_template(
+            linktree_template,
+            publish_linktree_data,
+            site_demo_path=site_data.get("site_demo_path_publish", "site/index.html"),
+        ),
+        encoding="utf-8",
+    )
+
+    shutil.copy2(SITE_TEMPLATE_DIR / "netlify.toml", publish_dir / "netlify.toml")
+    print(f"Pacote publish: {publish_dir} ({copied} imagens)")
+    return publish_dir
+
+
+def generate_demo(output_dir: Path) -> dict[str, Path]:
+    site_data_path = output_dir / "site_data.json"
+    if not site_data_path.exists():
+        raise FileNotFoundError(f"site_data.json não encontrado em {output_dir}")
+
+    site_data = json.loads(site_data_path.read_text(encoding="utf-8"))
+
+    return {
+        "site": generate_site_demo(output_dir, site_data),
+        "linktree": generate_linktree_demo(output_dir, site_data),
+        "publish": generate_publish_bundle(output_dir, site_data),
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Gerar HTML demo (site + linktree + publish)")
+    parser.add_argument("output_dir", help="Pasta com site_data.json")
+    args = parser.parse_args()
+
+    output_dir = Path(args.output_dir)
+    if not output_dir.is_absolute():
+        output_dir = PROJECT_ROOT / output_dir
+
+    try:
+        generate_demo(output_dir)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

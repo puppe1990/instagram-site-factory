@@ -1,0 +1,26 @@
+{
+  "username": "advocaciatahismunhoz",
+  "display_name": "Tahís Munhoz",
+  "instagram_url": "https://www.instagram.com/advocaciatahismunhoz/",
+  "phone": "5543984544623",
+  "email": "juridico.tahismunhoz@gmail.com",
+  "website": "https://www.tahismunhozadvocacia.com.br",
+  "city": "Londrina, PR",
+  "category": "Direito Imobiliário",
+  "status": "dm_enviada",
+  "canal": "instagram_dm",
+  "template": "dm_1_primeiro_contato",
+  "links": {
+    "linktree": "https://advocaciatahismunhoz.netlify.app",
+    "site": "https://advocaciatahismunhoz.netlify.app/site/"
+  },
+  "netlify": {
+    "site_name": "advocaciatahismunhoz",
+    "deploy_id": "6a3133657c535a00c63704a8",
+    "painel": "https://app.netlify.com/projects/advocaciatahismunhoz"
+  },
+  "demo_local": "output/advocaciatahismunhoz/publish",
+  "enviado_em": "2026-06-16",
+  "proximo_passo": "follow_up_48h",
+  "follow_up_em": "2026-06-18"
+}

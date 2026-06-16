@@ -1,0 +1,26 @@
+{
+  "username": "advcarolinadecarvalho",
+  "display_name": "Ana Carolina Carvalho ⚖️",
+  "instagram_url": "https://www.instagram.com/advcarolinadecarvalho/",
+  "phone": "5515988303779",
+  "email": "",
+  "website": "",
+  "city": "",
+  "category": "Direito Criminal",
+  "status": "pronto_para_envio",
+  "canal": "instagram_dm",
+  "template": "dm_1_primeiro_contato",
+  "links": {
+    "linktree": "https://advcarolinadecarvalho.netlify.app",
+    "site": "https://advcarolinadecarvalho.netlify.app/site/"
+  },
+  "netlify": {
+    "site_name": "advcarolinadecarvalho",
+    "deploy_id": "6a313aa093020c1b212adff1",
+    "painel": "https://app.netlify.com/projects/advcarolinadecarvalho"
+  },
+  "demo_local": "output/advcarolinadecarvalho/publish",
+  "criado_em": "2026-06-16",
+  "proximo_passo": "enviar_dm",
+  "follow_up_em": "2026-06-18"
+}

@@ -1,0 +1,27 @@
+{
+  "username": "adv.rafaelgarcianunes",
+  "display_name": "Rafael Garcia Nunes",
+  "instagram_url": "https://www.instagram.com/adv.rafaelgarcianunes/",
+  "phone": "",
+  "email": "",
+  "website": "",
+  "city": "Franca / Ribeirão Preto, SP",
+  "category": "Direito Tributário",
+  "status": "pronto_para_envio",
+  "canal": "instagram_dm",
+  "template": "dm_1_primeiro_contato",
+  "links": {
+    "linktree": "https://adv-rafaelgarcianunes.netlify.app",
+    "site": "https://adv-rafaelgarcianunes.netlify.app/site/"
+  },
+  "netlify": {
+    "site_name": "adv-rafaelgarcianunes",
+    "site_id": "ac37a4d0-5483-448f-b779-4168c168b313",
+    "deploy_id": "6a314512c9d186424edfa5ea",
+    "painel": "https://app.netlify.com/projects/adv-rafaelgarcianunes"
+  },
+  "demo_local": "output/adv.rafaelgarcianunes/publish",
+  "criado_em": "2026-06-16",
+  "proximo_passo": "enviar_dm",
+  "follow_up_em": "2026-06-18"
+}

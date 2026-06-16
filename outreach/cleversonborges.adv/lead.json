@@ -1,0 +1,22 @@
+{
+  "username": "cleversonborges.adv",
+  "display_name": "Cleverson Borges",
+  "instagram_url": "https://www.instagram.com/cleversonborges.adv/",
+  "phone": "5532920007640",
+  "status": "dm_enviada",
+  "canal": "instagram_dm",
+  "template": "dm_1_primeiro_contato",
+  "links": {
+    "linktree": "https://cleversonborges-adv.netlify.app",
+    "site": "https://cleversonborges-adv.netlify.app/site/"
+  },
+  "netlify": {
+    "site_name": "cleversonborges-adv",
+    "deploy_id": "6a31308ff4e0b8e9b0a9de45",
+    "painel": "https://app.netlify.com/projects/cleversonborges-adv"
+  },
+  "demo_local": "output/cleversonborges.adv/publish",
+  "enviado_em": "2026-06-16",
+  "proximo_passo": "follow_up_48h",
+  "follow_up_em": "2026-06-18"
+}

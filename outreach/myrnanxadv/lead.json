@@ -1,0 +1,26 @@
+{
+  "username": "myrnanxadv",
+  "display_name": "Myrna Rolim",
+  "instagram_url": "https://www.instagram.com/myrnanxadv/",
+  "phone": "",
+  "email": "",
+  "website": "",
+  "city": "Fortaleza, CE",
+  "category": "Direito Tributário",
+  "status": "pronto_para_envio",
+  "canal": "instagram_dm",
+  "template": "dm_1_primeiro_contato",
+  "links": {
+    "linktree": "https://myrnanxadv.netlify.app",
+    "site": "https://myrnanxadv.netlify.app/site/"
+  },
+  "netlify": {
+    "site_name": "myrnanxadv",
+    "deploy_id": "6a31392ec9d186149adfa583",
+    "painel": "https://app.netlify.com/projects/myrnanxadv"
+  },
+  "demo_local": "output/myrnanxadv/publish",
+  "criado_em": "2026-06-16",
+  "proximo_passo": "enviar_dm",
+  "follow_up_em": "2026-06-18"
+}

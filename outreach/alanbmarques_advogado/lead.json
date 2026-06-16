@@ -1,0 +1,27 @@
+{
+  "username": "alanbmarques_advogado",
+  "display_name": "Alan Bruno Marques",
+  "instagram_url": "https://www.instagram.com/alanbmarques_advogado/",
+  "phone": "",
+  "email": "",
+  "website": "",
+  "city": "",
+  "category": "Advocacia",
+  "status": "pronto_para_envio",
+  "canal": "instagram_dm",
+  "template": "dm_1_primeiro_contato",
+  "links": {
+    "linktree": "https://alanbmarques-advogado.netlify.app",
+    "site": "https://alanbmarques-advogado.netlify.app/site/"
+  },
+  "netlify": {
+    "site_name": "alanbmarques-advogado",
+    "site_id": "444f17a1-6f20-4211-b734-6eb6e01cdb7f",
+    "deploy_id": "6a31412b990b592e33d2aed5",
+    "painel": "https://app.netlify.com/projects/alanbmarques-advogado"
+  },
+  "demo_local": "output/alanbmarques_advogado/publish",
+  "criado_em": "2026-06-16",
+  "proximo_passo": "enviar_dm",
+  "follow_up_em": "2026-06-18"
+}

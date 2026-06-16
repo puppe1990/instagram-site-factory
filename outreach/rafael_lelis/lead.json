@@ -1,0 +1,26 @@
+{
+  "username": "rafael_lelis",
+  "display_name": "Rafael Lelis",
+  "instagram_url": "https://www.instagram.com/rafael_lelis/",
+  "phone": "",
+  "email": "",
+  "website": "https://bit.ly/3WB7Q6d",
+  "city": "Rio de Janeiro, RJ",
+  "category": "Direito Imobiliário",
+  "status": "pronto_para_envio",
+  "canal": "instagram_dm",
+  "template": "dm_1_primeiro_contato",
+  "links": {
+    "linktree": "https://rafael-lelis.netlify.app",
+    "site": "https://rafael-lelis.netlify.app/site/"
+  },
+  "netlify": {
+    "site_name": "rafael-lelis",
+    "deploy_id": "6a3137721bd45009055d8805",
+    "painel": "https://app.netlify.com/projects/rafael-lelis"
+  },
+  "demo_local": "output/rafael_lelis/publish",
+  "criado_em": "2026-06-16",
+  "proximo_passo": "enviar_dm",
+  "follow_up_em": "2026-06-18"
+}

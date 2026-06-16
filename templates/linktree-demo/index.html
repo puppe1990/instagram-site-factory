@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-style="{{PROFILE_STYLE}}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{DISPLAY_NAME}} | Links</title>
+    <meta name="description" content="{{SEO_DESCRIPTION}}" />
+    <meta property="og:title" content="{{DISPLAY_NAME}}" />
+    <meta property="og:description" content="{{SEO_DESCRIPTION}}" />
+    <meta property="og:image" content="{{AVATAR_IMAGE}}" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="{{FONT_LINK}}" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    {{THEME_OVERRIDE}}
+  </head>
+  <body>
+    <div class="demo-ribbon">
+      Demonstração — link na bio gerado do Instagram @{{USERNAME}}
+    </div>
+
+    <main class="page">
+      <header class="profile">
+        <div class="profile__frame-wrap">
+          <div class="profile__glow" aria-hidden="true"></div>
+          <div class="profile__frame">
+            <img src="{{AVATAR_IMAGE}}" alt="{{BUSINESS_NAME}}" />
+          </div>
+        </div>
+        <p class="profile__eyebrow">{{CATEGORY}}</p>
+        <h1 class="profile__title">{{HERO_TITLE}}</h1>
+        <p class="profile__bio">{{BIO}}</p>
+      </header>
+
+      <nav class="links" aria-label="Links principais">{{LINKS_HTML}}</nav>
+
+      <footer class="site-footer">
+        <a href="{{INSTAGRAM_URL}}" target="_blank" rel="noopener">@{{USERNAME}}</a>
+      </footer>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

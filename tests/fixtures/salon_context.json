@@ -1,0 +1,42 @@
+{
+  "profile_url": "https://www.instagram.com/salao_beleza/",
+  "profile": {
+    "username": "salao_beleza",
+    "full_name": "Studio Bella Hair",
+    "biography": "Salão em Salvador | WhatsApp (71) 99999-8888",
+    "external_url": ""
+  },
+  "posts": [
+    {
+      "filename": "hero.jpg",
+      "path": "media/hero.jpg",
+      "type": "image",
+      "caption": "Balayage premium - R$280",
+      "date": "2026-06-10",
+      "url": "https://www.instagram.com/p/abc/",
+      "shortcode": "abc",
+      "likes": 120
+    },
+    {
+      "filename": "manicure.jpg",
+      "path": "media/manicure.jpg",
+      "type": "image",
+      "caption": "Manicure tradicional - R$35",
+      "date": "2026-06-08",
+      "url": "https://www.instagram.com/p/def/",
+      "shortcode": "def",
+      "likes": 80
+    },
+    {
+      "filename": "video.mp4",
+      "path": "media/video.mp4",
+      "type": "video",
+      "caption": "Novo espaço do salão #cabelo #salvador",
+      "date": "2026-06-05",
+      "url": "https://www.instagram.com/reel/xyz/",
+      "shortcode": "xyz",
+      "likes": 200,
+      "transcript": "Bem-vindos ao nosso salão em Salvador, agende pelo WhatsApp."
+    }
+  ]
+}

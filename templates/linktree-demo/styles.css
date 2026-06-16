@@ -1,0 +1,326 @@
+:root {
+  --bg: #0e0c0b;
+  --bg-soft: #171311;
+  --ink: #f8f4ee;
+  --ink-muted: #b9aea4;
+  --ink-soft: #8f837a;
+  --accent: #c45c26;
+  --accent-light: #e8884f;
+  --accent-glow: rgba(196, 92, 38, 0.35);
+  --line: rgba(255, 255, 255, 0.1);
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-style="professional"] {
+  --bg: #020617;
+  --bg-soft: #0f172a;
+  --ink: #f8fafc;
+  --ink-muted: #94a3b8;
+  --ink-soft: #64748b;
+  --accent: #b8860b;
+  --accent-light: #d4af37;
+  --accent-glow: rgba(184, 134, 11, 0.28);
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 50% -10%, var(--accent-glow), transparent 38%),
+    linear-gradient(180deg, var(--bg-soft), var(--bg));
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  content: "";
+  inset: 0;
+  mix-blend-mode: soft-light;
+  opacity: 0.4;
+  pointer-events: none;
+  position: fixed;
+  z-index: 0;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.demo-ribbon {
+  background: linear-gradient(90deg, #111 0%, #2a2420 100%);
+  color: #d8d0c8;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.55rem 1rem;
+  position: relative;
+  text-align: center;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.page {
+  margin: 0 auto;
+  max-width: 28rem;
+  padding: 2rem 1.15rem 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.profile {
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg-soft));
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 1.35rem;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--accent) 18%, transparent) inset,
+    0 18px 44px color-mix(in srgb, var(--ink) 7%, transparent);
+  margin-bottom: 1rem;
+  padding: 1.65rem 1.25rem 1.45rem;
+  text-align: center;
+}
+
+.profile::after {
+  background: color-mix(in srgb, var(--accent) 55%, var(--line));
+  content: "";
+  display: block;
+  height: 1px;
+  margin: 1.35rem auto 0;
+  opacity: 0.55;
+  width: min(12rem, 72%);
+}
+
+.profile__frame-wrap {
+  margin: 0 auto 1.1rem;
+  position: relative;
+  width: 7.5rem;
+}
+
+.profile__glow {
+  background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+  filter: blur(18px);
+  inset: 10%;
+  position: absolute;
+  z-index: 0;
+}
+
+.profile__frame {
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  border-radius: 1.35rem;
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--ink) 12%, transparent);
+  overflow: hidden;
+  position: relative;
+  transform: rotate(-2.5deg);
+  z-index: 1;
+}
+
+.profile__frame::before {
+  border: 2px solid var(--accent);
+  border-radius: inherit;
+  content: "";
+  inset: -7px;
+  opacity: 0.5;
+  position: absolute;
+  transform: rotate(4deg);
+  z-index: -1;
+}
+
+.profile__frame img {
+  aspect-ratio: 1;
+  object-fit: cover;
+  width: 100%;
+}
+
+.profile__eyebrow {
+  color: var(--accent-light);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.profile__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 8vw, 2.45rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  margin: 0.55rem 0 0;
+}
+
+.profile__title em {
+  color: var(--accent-light);
+  font-style: normal;
+}
+
+.profile__bio {
+  color: var(--ink-muted);
+  font-size: 0.98rem;
+  line-height: 1.7;
+  margin: 0.85rem auto 0;
+  max-width: 22rem;
+}
+
+.profile__category {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--accent-light);
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  margin-top: 0.9rem;
+  padding: 0.45rem 0.8rem;
+  text-transform: uppercase;
+}
+
+.links {
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg-soft));
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 1.35rem;
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--ink) 7%, transparent);
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem;
+}
+
+.link-card {
+  align-items: center;
+  background: color-mix(in srgb, var(--ink) 3%, var(--bg-soft));
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  display: flex;
+  gap: 0.9rem;
+  padding: 0.95rem 1rem;
+  transition: transform 0.2s var(--ease-out), border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.link-card:hover {
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-soft));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 10%, transparent);
+  transform: translateY(-2px);
+}
+
+.link-card:active {
+  transform: scale(0.985);
+}
+
+.link-card--primary {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 24%, var(--bg-soft)),
+    color-mix(in srgb, var(--accent) 10%, var(--bg-soft))
+  );
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  box-shadow: 0 14px 36px var(--accent-glow);
+}
+
+.link-card__icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated, var(--bg-soft)));
+  border-radius: 0.8rem;
+  color: var(--ink);
+  display: grid;
+  flex-shrink: 0;
+  height: 2.6rem;
+  justify-items: center;
+  width: 2.6rem;
+}
+
+.link-card--primary .link-card__icon {
+  background: color-mix(in srgb, var(--accent) 22%, rgba(255, 255, 255, 0.1));
+  color: var(--ink);
+}
+
+.link-card__icon svg {
+  height: 1.2rem;
+  width: 1.2rem;
+}
+
+.link-card__icon svg.icon--stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.link-card__icon svg.icon--fill {
+  fill: currentColor;
+  stroke: none;
+}
+
+.link-card__label {
+  display: block;
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.link-card__sub {
+  color: var(--ink-soft);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 0.15rem;
+}
+
+.links-empty {
+  color: var(--ink-muted);
+  font-size: 0.92rem;
+  text-align: center;
+}
+
+.site-footer {
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.site-footer a {
+  color: var(--ink);
+  font-weight: 800;
+  transition: color 0.2s;
+}
+
+.site-footer a:hover {
+  color: var(--accent-light);
+}
+
+.site-footer p {
+  line-height: 1.5;
+  margin: 0.55rem 0 0;
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-card:hover,
+  .link-card:active {
+    transform: none;
+  }
+}
