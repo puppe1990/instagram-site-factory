@@ -43,7 +43,9 @@ def attach_transcripts(output_dir: Path, transcripts: dict[str, str]) -> None:
     }
 
     combined_lines = []
-    for post in sorted(context.get("posts", []), key=lambda item: item.get("date", ""), reverse=True):
+    for post in sorted(
+        context.get("posts", []), key=lambda item: item.get("date", ""), reverse=True
+    ):
         if post.get("type") != "video" or not post.get("transcript"):
             continue
         combined_lines.append(
@@ -60,8 +62,12 @@ def attach_transcripts(output_dir: Path, transcripts: dict[str, str]) -> None:
 
     combined_path = output_dir / "all_transcripts.txt"
     combined_path.write_text("\n\n---\n\n".join(combined_lines).strip() + "\n", encoding="utf-8")
-    context_path.write_text(json.dumps(context, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"Transcrições anexadas ao context.json ({context['transcription']['with_text']} com texto)")
+    context_path.write_text(
+        json.dumps(context, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    print(
+        f"Transcrições anexadas ao context.json ({context['transcription']['with_text']} com texto)"
+    )
     print(f"Combinado: {combined_path}")
 
 

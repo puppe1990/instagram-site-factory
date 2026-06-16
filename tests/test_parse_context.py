@@ -121,11 +121,16 @@ class TestDetectProfileStyle:
     def test_detects_creator_from_bio(self, sample_lawyer_context):
         context = dict(sample_lawyer_context)
         context["profile"] = dict(context["profile"])
-        context["profile"]["biography"] = "Defendo direitos e ministro palestras para te fazer sorrir"
+        context["profile"]["biography"] = (
+            "Defendo direitos e ministro palestras para te fazer sorrir"
+        )
         assert detect_profile_style(context["profile"], context["posts"]) == "creator"
 
     def test_detects_professional_from_practice_bio(self, sample_lawyer_context):
-        assert detect_profile_style(sample_lawyer_context["profile"], sample_lawyer_context["posts"]) == "professional"
+        assert (
+            detect_profile_style(sample_lawyer_context["profile"], sample_lawyer_context["posts"])
+            == "professional"
+        )
 
 
 class TestStripEmojis:

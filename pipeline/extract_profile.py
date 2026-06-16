@@ -116,7 +116,9 @@ def extract_profile(
             from pipeline.lib.instagram import fetch_profile_web_api
 
             profile_info = fetch_profile_web_api(username)
-            print(f"Bio obtida via API pública: {len(profile_info.get('biography', ''))} caracteres")
+            print(
+                f"Bio obtida via API pública: {len(profile_info.get('biography', ''))} caracteres"
+            )
         except Exception as api_exc:
             print(f"Aviso: API pública também falhou: {api_exc}")
             profile_info = {"username": username, "full_name": username, "biography": ""}
@@ -142,10 +144,14 @@ def extract_profile(
     context["readiness"] = score_profile(context)
 
     context_path = output_dir / "context.json"
-    context_path.write_text(json.dumps(context, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    context_path.write_text(
+        json.dumps(context, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
 
     print(f"\nContexto salvo: {context_path}")
-    print(f"Score de prontidão: {context['readiness']['score']}/100 ({context['readiness']['grade']})")
+    print(
+        f"Score de prontidão: {context['readiness']['score']}/100 ({context['readiness']['grade']})"
+    )
     print(context["readiness"]["summary"])
     return context
 
@@ -155,9 +161,13 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Extrair contexto de perfil Instagram")
     parser.add_argument("profile", help="URL ou @usuario")
-    parser.add_argument("--output-dir", default=None, help="Diretório de saída (default: output/<user>)")
+    parser.add_argument(
+        "--output-dir", default=None, help="Diretório de saída (default: output/<user>)"
+    )
     parser.add_argument("--limit", type=int, default=40, help="Máximo de posts para baixar")
-    parser.add_argument("--cookies-file", default=None, help="Cookies Netscape para perfis privados")
+    parser.add_argument(
+        "--cookies-file", default=None, help="Cookies Netscape para perfis privados"
+    )
     args = parser.parse_args()
 
     username = extract_username(normalize_profile_url(args.profile))

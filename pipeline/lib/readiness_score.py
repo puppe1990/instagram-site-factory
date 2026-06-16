@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-
 PHONE_RE = re.compile(r"(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?\d{4,5}[-\s]?\d{4}")
 PRICE_RE = re.compile(r"R\$\s?\d+(?:[.,]\d{2})?", re.IGNORECASE)
 WHATSAPP_RE = re.compile(r"whatsapp|wa\.me|agende|agenda|marque|marcação", re.IGNORECASE)
