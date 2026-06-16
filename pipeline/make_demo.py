@@ -14,18 +14,22 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from pipeline.extract_profile import extract_profile, load_env  # noqa: E402
-from pipeline.generate_demo_html import generate_demo  # noqa: E402
+from pipeline.generate_demo_html import generate_demo, netlify_site_slug  # noqa: E402
 from pipeline.lib.instagram import extract_username, normalize_profile_url  # noqa: E402
 from pipeline.lib.metadata_enrich import enrich_context  # noqa: E402
 from pipeline.parse_context import parse_context  # noqa: E402
 from pipeline.transcribe_videos import attach_transcripts, load_all_env, transcribe_profile  # noqa: E402
 
 
-def write_site_data(output_dir: Path, context: dict) -> None:
+def write_site_data(output_dir: Path, context: dict, *, publish_url: str | None = None) -> None:
     site_data = parse_context(context)
+    if publish_url:
+        site_data["publish_url"] = publish_url.rstrip("/")
+    elif not site_data.get("publish_url"):
+        username = site_data.get("username") or context.get("profile", {}).get("username", "")
+        if username:
+            site_data["publish_url"] = f"https://{netlify_site_slug(username)}.netlify.app"
     path = output_dir / "site_data.json"
-    import json
-
     path.write_text(json.dumps(site_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"site_data salvo: {path}")
 
@@ -37,7 +41,7 @@ def deploy_netlify(demo_dir: Path) -> None:
         print("NETLIFY_AUTH_TOKEN não configurado — pule deploy ou use drag-and-drop.")
         return
 
-    cmd = ["netlify", "deploy", "--prod", f"--dir={demo_dir}"]
+    cmd = ["netlify", "deploy", "--prod", "--no-build", f"--dir={demo_dir}"]
     if site_id:
         cmd.extend(["--site", site_id])
     env = os.environ.copy()
@@ -56,6 +60,7 @@ def main() -> None:
     parser.add_argument("--skip-transcribe", action="store_true", help="Pular transcrição dos vídeos")
     parser.add_argument("--cookies-file", default=None)
     parser.add_argument("--deploy", action="store_true", help="Deploy automático no Netlify")
+    parser.add_argument("--publish-url", default=None, help="URL pública do site (ex.: https://usuario.netlify.app)")
     parser.add_argument("--force", action="store_true", help="Gerar mesmo com score baixo")
     args = parser.parse_args()
 
@@ -84,7 +89,9 @@ def main() -> None:
         print("\nPerfil com score baixo. Use --force para gerar mesmo assim.")
         sys.exit(2)
 
-    write_site_data(output_dir, context)
+    publish_url = args.publish_url or os.environ.get("NETLIFY_PUBLISH_URL")
+
+    write_site_data(output_dir, context, publish_url=publish_url)
     demos = generate_demo(output_dir)
 
     print(f"\n{'=' * 60}")

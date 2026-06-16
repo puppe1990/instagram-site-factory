@@ -17,8 +17,10 @@ from pipeline.lib.instagram import (  # noqa: E402
     IMAGE_EXTENSIONS,
     VIDEO_EXTENSIONS,
     download_media,
+    download_profile_picture,
     extract_username,
     fetch_profile_info,
+    metadata_matches_profile,
     normalize_profile_url,
     read_metadata,
 )
@@ -69,6 +71,23 @@ def build_posts(media_dir: Path) -> list[dict]:
     return posts
 
 
+def filter_posts_for_profile(posts: list[dict], media_dir: Path, username: str) -> list[dict]:
+    """Remove mídia baixada de outros perfis (ex.: reels em que o alvo foi marcado)."""
+    profile_username = username.lower()
+    kept: list[dict] = []
+
+    for post in posts:
+        media_path = media_dir / post["filename"]
+        meta = read_metadata(media_path)
+        if meta and not metadata_matches_profile(meta, profile_username):
+            owner = meta.get("owner", {}).get("username") or meta.get("username") or "?"
+            print(f"Ignorando mídia de @{owner}: {post['filename']}")
+            continue
+        kept.append(post)
+
+    return kept
+
+
 def extract_profile(
     profile_input: str,
     output_dir: Path,
@@ -103,6 +122,12 @@ def extract_profile(
             profile_info = {"username": username, "full_name": username, "biography": ""}
 
     posts = build_posts(media_dir)
+    posts = filter_posts_for_profile(posts, media_dir, username)
+
+    profile_pic_path = media_dir / "profile_pic.jpg"
+    if download_profile_picture(username, profile_pic_path):
+        profile_info["profile_pic"] = "media/profile_pic.jpg"
+
     context = {
         "extracted_at": datetime.now().isoformat(timespec="seconds"),
         "profile_url": profile_url,

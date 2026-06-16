@@ -8,6 +8,7 @@ from pipeline.generate_demo_html import (
     apply_site_template,
     copy_profile_avatar,
     generate_demo,
+    netlify_site_slug,
     render_highlights,
     render_links,
     render_services,
@@ -54,6 +55,12 @@ class TestServicesLabels:
         eyebrow, title = services_labels("Advocacia", "creator")
         assert eyebrow == "Atuação"
         assert title == "O que faço"
+
+
+class TestNetlifySlug:
+    def test_converts_dots_and_underscores(self):
+        assert netlify_site_slug("adv.rafaelgarcianunes") == "adv-rafaelgarcianunes"
+        assert netlify_site_slug("alanbmarques_advogado") == "alanbmarques-advogado"
 
 
 class TestApplyTemplates:
@@ -190,3 +197,27 @@ class TestGenerateDemo:
 
         linktree_html = (result["publish"] / "index.html").read_text(encoding="utf-8")
         assert 'src="assets/avatar.jpg"' in linktree_html
+
+    def test_publish_uses_absolute_og_image(self, tmp_path: Path, sample_lawyer_context):
+        output = tmp_path / "lawyer"
+        output.mkdir()
+        media = output / "media"
+        media.mkdir()
+        (media / "profile_pic.jpg").write_bytes(b"fake")
+        (media / "thumb.jpg").write_bytes(b"fake")
+
+        site_data = __import__("pipeline.parse_context", fromlist=["parse_context"]).parse_context(
+            sample_lawyer_context
+        )
+        site_data["username"] = "cleversonborges.adv"
+        site_data["publish_url"] = "https://cleversonborges-adv.netlify.app"
+        (output / "site_data.json").write_text(json.dumps(site_data), encoding="utf-8")
+
+        result = generate_demo(output)
+        linktree_html = (result["publish"] / "index.html").read_text(encoding="utf-8")
+        site_html = (result["publish"] / "site" / "index.html").read_text(encoding="utf-8")
+
+        assert 'property="og:image" content="https://cleversonborges-adv.netlify.app/assets/og-cleversonborges-adv.jpg"' in linktree_html
+        assert 'property="og:url" content="https://cleversonborges-adv.netlify.app"' in linktree_html
+        assert 'property="og:image" content="https://cleversonborges-adv.netlify.app/site/assets/og-cleversonborges-adv.jpg"' in site_html
+        assert (result["publish"] / "assets" / "og-cleversonborges-adv.jpg").exists()

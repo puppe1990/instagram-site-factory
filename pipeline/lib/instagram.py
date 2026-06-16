@@ -142,7 +142,46 @@ def fetch_profile_web_api(username: str) -> dict:
         "posts_count": user.get("edge_owner_to_timeline_media", {}).get("count"),
         "is_business": user.get("is_business_account"),
         "category": user.get("category_name") or user.get("business_category_name") or "",
+        "profile_pic_url_hd": user.get("profile_pic_url_hd") or "",
+        "profile_pic_url": user.get("profile_pic_url") or "",
     }
+
+
+def meta_owner_username(meta: dict) -> str:
+    owner = meta.get("owner") or {}
+    return (meta.get("username") or owner.get("username") or "").lower()
+
+
+def metadata_matches_profile(meta: dict, profile_username: str) -> bool:
+    owner = meta_owner_username(meta)
+    if not owner:
+        return True
+    if not profile_username:
+        return True
+    return owner == profile_username.lower()
+
+
+def download_profile_picture(username: str, dest: Path) -> bool:
+    """Baixa a foto de perfil via API pública (fonte confiável do dono do perfil)."""
+    try:
+        info = fetch_profile_web_api(username)
+    except Exception as exc:
+        print(f"Aviso: não foi possível buscar foto de perfil de @{username}: {exc}")
+        return False
+
+    pic_url = info.get("profile_pic_url_hd") or info.get("profile_pic_url")
+    if not pic_url:
+        return False
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        req = urllib.request.Request(pic_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            dest.write_bytes(resp.read())
+        return dest.stat().st_size > 0
+    except Exception as exc:
+        print(f"Aviso: falha ao baixar foto de perfil: {exc}")
+        return False
 
 
 def fetch_profile_info(username: str, cookies_file: str | None = None) -> dict:

@@ -11,6 +11,7 @@ from pipeline.lib.instagram import (
     build_source_urls,
     extract_username,
     fetch_profile_web_api,
+    metadata_matches_profile,
     normalize_profile_url,
     read_metadata,
 )
@@ -82,6 +83,19 @@ class TestFetchProfileWebApi:
 
         assert info["biography"] == "Bio real do Instagram"
         assert info["external_url"] == "https://wa.me/5532920007640"
+
+
+class TestMetadataMatchesProfile:
+    def test_accepts_missing_owner(self):
+        assert metadata_matches_profile({}, "cleversonborges.adv") is True
+
+    def test_rejects_foreign_owner(self):
+        meta = {"owner": {"username": "outro.perfil"}}
+        assert metadata_matches_profile(meta, "cleversonborges.adv") is False
+
+    def test_accepts_matching_owner(self):
+        meta = {"owner": {"username": "cleversonborges.adv"}}
+        assert metadata_matches_profile(meta, "cleversonborges.adv") is True
 
 
 class TestReadMetadata:

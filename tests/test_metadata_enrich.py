@@ -71,3 +71,43 @@ class TestEnrichContext:
         image_posts = [p for p in result["posts"] if p["type"] == "image"]
         assert any("_thumb.jpg" in p["filename"] for p in image_posts)
         assert result["posts"][0]["likes"] == 100
+
+    def test_ignores_foreign_owner_metadata(self, tmp_path: Path):
+        output = tmp_path / "user"
+        media = output / "media"
+        media.mkdir(parents=True)
+
+        foreign_video = "2026-03-18_FOREIGN [1].mp4"
+        (media / foreign_video).touch()
+        foreign_meta = {
+            "description": "Post de outra pessoa mencionando o alvo",
+            "display_url": "https://example.com/foreign.jpg",
+            "owner": {"username": "outro.perfil", "full_name": "Outro Perfil"},
+            "username": "outro.perfil",
+        }
+        (media / f"{foreign_video}.json").write_text(json.dumps(foreign_meta), encoding="utf-8")
+
+        context = {
+            "profile": {
+                "username": "adv.rafaelgarcianunes",
+                "full_name": "Rafael Garcia Nunes",
+                "biography": "Bio preservada",
+            },
+            "posts": [],
+        }
+        (output / "context.json").write_text(json.dumps(context), encoding="utf-8")
+
+        with (
+            patch("pipeline.lib.metadata_enrich.download_url", return_value=True),
+            patch("pipeline.lib.metadata_enrich.download_profile_picture", return_value=True),
+            patch(
+                "pipeline.lib.metadata_enrich.fetch_profile_web_api",
+                return_value={"biography": "", "full_name": "Rafael Garcia Nunes", "external_url": ""},
+            ),
+        ):
+            result = enrich_context(output)
+
+        assert result["profile"]["username"] == "adv.rafaelgarcianunes"
+        assert result["profile"]["full_name"] == "Rafael Garcia Nunes"
+        assert result["profile"]["biography"] == "Bio preservada"
+        assert not any("_thumb.jpg" in post.get("filename", "") for post in result["posts"])

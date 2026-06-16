@@ -29,6 +29,38 @@ def slugify(value: str) -> str:
     return re.sub(r"[-\s]+", "-", value).strip("-") or "negocio"
 
 
+def netlify_site_slug(username: str) -> str:
+    """Slug padrão dos sites Netlify gerados a partir do @usuario."""
+    cleaned = username.lower().strip().lstrip("@")
+    cleaned = re.sub(r"[._]+", "-", cleaned)
+    return re.sub(r"-+", "-", cleaned).strip("-") or "negocio"
+
+
+def default_publish_url(site_data: dict) -> str:
+    explicit = (site_data.get("publish_url") or "").strip().rstrip("/")
+    if explicit:
+        return explicit
+    username = site_data.get("username", "")
+    if username:
+        return f"https://{netlify_site_slug(username)}.netlify.app"
+    return ""
+
+
+def absolute_asset_url(publish_base: str, relative_path: str) -> str:
+    rel = relative_path.lstrip("/")
+    if not publish_base:
+        return rel
+    return f"{publish_base.rstrip('/')}/{rel}"
+
+
+def prepare_og_image(assets_dir: Path, username: str, source_avatar: Path) -> str:
+    """Cria arquivo dedicado ao preview social (evita cache de avatar.jpg antigo)."""
+    og_name = f"og-{netlify_site_slug(username)}.jpg"
+    og_path = assets_dir / og_name
+    shutil.copy2(source_avatar, og_path)
+    return f"assets/{og_name}"
+
+
 def render_services(services: list[dict[str, str]], profile_style: str = "professional") -> str:
     if not services:
         return """
@@ -304,13 +336,14 @@ def render_links(links: list[dict[str, str]]) -> str:
 
 
 def render_schema(site_data: dict) -> str:
+    image = site_data.get("og_image") or site_data.get("avatar_image") or site_data.get("hero_image")
     payload = {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
         "name": site_data.get("business_name"),
         "description": site_data.get("seo_description"),
-        "url": site_data.get("instagram_url"),
-        "image": site_data.get("avatar_image") or site_data.get("hero_image"),
+        "url": site_data.get("publish_url") or site_data.get("instagram_url"),
+        "image": image,
         "telephone": f"+{site_data['phone']}" if site_data.get("phone") else None,
     }
     payload = {key: value for key, value in payload.items() if value}
@@ -327,6 +360,8 @@ def apply_site_template(template: str, site_data: dict) -> str:
     nav_reels = '<a href="#reels">Reels</a>' if gallery else ""
     display_name = site_data.get("display_name") or site_data.get("headline", site_data.get("business_name", ""))
     avatar = site_data.get("avatar_image") or "assets/profile_pic.jpg"
+    og_image = site_data.get("og_image") or avatar
+    og_url = site_data.get("og_url") or site_data.get("publish_url") or ""
     replacements = {
         "{{PROFILE_STYLE}}": html.escape(profile_style),
         "{{BUSINESS_NAME}}": html.escape(site_data.get("business_name", "")),
@@ -340,6 +375,8 @@ def apply_site_template(template: str, site_data: dict) -> str:
         "{{CTA_LABEL}}": html.escape(site_data.get("cta_label", "Fale conosco")),
         "{{WHATSAPP_URL}}": html.escape(site_data.get("whatsapp_url", "#contato")),
         "{{AVATAR_IMAGE}}": html.escape(avatar),
+        "{{OG_IMAGE}}": html.escape(og_image),
+        "{{OG_URL}}": html.escape(og_url),
         "{{SEO_TITLE}}": html.escape(site_data.get("seo_title", site_data.get("business_name", "Site"))),
         "{{SEO_DESCRIPTION}}": html.escape(site_data.get("seo_description", "")),
         "{{SERVICES_EYEBROW}}": html.escape(services_eyebrow),
@@ -376,6 +413,8 @@ def apply_linktree_template(template: str, site_data: dict, *, site_demo_path: s
     theme = THEMES.get(profile_style, THEMES["professional"])
     display_name = site_data.get("display_name") or site_data.get("headline", site_data.get("business_name", ""))
     avatar = site_data.get("avatar_image") or site_data.get("hero_image") or "assets/avatar.jpg"
+    og_image = site_data.get("og_image") or avatar
+    og_url = site_data.get("og_url") or site_data.get("publish_url") or ""
     replacements = {
         "{{PROFILE_STYLE}}": html.escape(profile_style),
         "{{BUSINESS_NAME}}": html.escape(site_data.get("business_name", "")),
@@ -384,6 +423,8 @@ def apply_linktree_template(template: str, site_data: dict, *, site_demo_path: s
         "{{BIO}}": html.escape(site_data.get("bio", site_data.get("subheadline", ""))),
         "{{CATEGORY}}": html.escape(site_data.get("category", "")),
         "{{AVATAR_IMAGE}}": html.escape(avatar),
+        "{{OG_IMAGE}}": html.escape(og_image),
+        "{{OG_URL}}": html.escape(og_url),
         "{{SEO_DESCRIPTION}}": html.escape(site_data.get("seo_description", "")),
         "{{LINKS_HTML}}": render_links(links),
         "{{FONT_LINK}}": theme["fonts"],
@@ -510,9 +551,24 @@ def generate_publish_bundle(output_dir: Path, site_data: dict) -> Path:
         shutil.copy2(asset, linktree_assets / asset.name)
     copy_profile_avatar(media_dir, linktree_assets)
 
+    publish_base = default_publish_url(site_data)
+    username = site_data.get("username", "negocio")
+    avatar_source = linktree_assets / "avatar.jpg"
+    if avatar_source.exists():
+        og_relative = prepare_og_image(linktree_assets, username, avatar_source)
+        prepare_og_image(assets_dir, username, avatar_source)
+        og_image = absolute_asset_url(publish_base, og_relative)
+    else:
+        og_image = ""
+
     publish_site_data = deepcopy(site_data)
     publish_site_data["avatar_image"] = "assets/profile_pic.jpg"
     publish_site_data["hero_image"] = ""
+    publish_site_data["publish_url"] = publish_base
+    publish_site_data["og_url"] = f"{publish_base}/site/" if publish_base else ""
+    publish_site_data["og_image"] = absolute_asset_url(
+        publish_base, f"site/assets/og-{netlify_site_slug(username)}.jpg"
+    ) if publish_base and og_image else og_image
 
     shutil.copy2(SITE_TEMPLATE_DIR / "script.js", site_dir / "script.js")
     shutil.copy2(SITE_TEMPLATE_DIR / "styles.css", site_dir / "styles.css")
@@ -540,6 +596,11 @@ def generate_publish_bundle(output_dir: Path, site_data: dict) -> Path:
 
     publish_linktree_data = deepcopy(site_data)
     publish_linktree_data["avatar_image"] = "assets/avatar.jpg"
+    publish_linktree_data["publish_url"] = publish_base
+    publish_linktree_data["og_url"] = publish_base
+    publish_linktree_data["og_image"] = absolute_asset_url(
+        publish_base, f"assets/og-{netlify_site_slug(username)}.jpg"
+    ) if publish_base and og_image else og_image
 
     shutil.copy2(LINKTREE_TEMPLATE_DIR / "script.js", publish_dir / "script.js")
     shutil.copy2(LINKTREE_TEMPLATE_DIR / "styles.css", publish_dir / "styles.css")
