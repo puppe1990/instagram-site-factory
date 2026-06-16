@@ -21,6 +21,15 @@ from pipeline.lib.favicon import write_favicon  # noqa: E402
 from pipeline.lib.link_icons import LINK_ICONS  # noqa: E402
 
 ICONS = LINK_ICONS
+OAB_RE = re.compile(r"OAB[/\s]*[A-Z]{2}\s*[\d.]+", re.IGNORECASE)
+SITE_TEMPLATE_FILES = ("script.js", "styles.css", "editorial.css")
+
+
+def copy_site_template_files(target_dir: Path, *, include_netlify: bool = False) -> None:
+    for filename in SITE_TEMPLATE_FILES:
+        shutil.copy2(SITE_TEMPLATE_DIR / filename, target_dir / filename)
+    if include_netlify:
+        shutil.copy2(SITE_TEMPLATE_DIR / "netlify.toml", target_dir / "netlify.toml")
 
 
 def slugify(value: str) -> str:
@@ -88,6 +97,290 @@ def render_trust_badges(badges: list[str]) -> str:
     return "\n".join(f'<span class="pill">{html.escape(badge)}</span>' for badge in badges)
 
 
+def split_display_name(display_name: str) -> tuple[str, str]:
+    parts = display_name.strip().split()
+    if len(parts) >= 2:
+        return parts[0], " ".join(parts[1:])
+    return display_name.strip(), ""
+
+
+def render_nav_brand(display_name: str) -> str:
+    first, rest = split_display_name(display_name)
+    if rest:
+        return f"<strong>{html.escape(first)}</strong> {html.escape(rest)}"
+    return html.escape(display_name)
+
+
+def primary_cta(site_data: dict) -> tuple[str, str]:
+    whatsapp_url = (site_data.get("whatsapp_url") or "").strip()
+    if whatsapp_url and whatsapp_url not in {"#", "#contato"}:
+        return whatsapp_url, site_data.get("cta_label", "Falar no WhatsApp")
+    instagram_url = site_data.get("instagram_url", "#contato")
+    return instagram_url, "Falar no Instagram"
+
+
+def expand_services(services: list[dict[str, str]]) -> list[dict[str, str]]:
+    expanded: list[dict[str, str]] = []
+    for item in services:
+        name = (item.get("name") or "Serviço").strip()
+        price = item.get("price", "Sob consulta")
+        if "," in name:
+            for part in name.split(","):
+                part = part.strip()
+                if part:
+                    expanded.append({"name": part, "price": price})
+        else:
+            expanded.append({"name": name, "price": price})
+    if not expanded:
+        expanded.append({"name": "Atendimento jurídico", "price": "Sob consulta"})
+    return expanded[:6]
+
+
+def area_description(name: str) -> str:
+    name_l = name.lower()
+    if "tribut" in name_l:
+        return "Planejamento, contencioso e orientação estratégica com foco em segurança jurídica."
+    if "integridade" in name_l or "compliance" in name_l:
+        return "Programas de compliance, governança e conduta alinhados à realidade do negócio."
+    if "regulat" in name_l:
+        return "Navegação em normas e exigências setoriais com visão prática para decisões seguras."
+    if "penal" in name_l or "criminal" in name_l:
+        return "Defesa técnica, acompanhamento processual e orientação em cada etapa."
+    if "trabalh" in name_l:
+        return "Consultoria preventiva e contenciosa para empresas e profissionais."
+    if "civil" in name_l:
+        return "Soluções jurídicas com foco em prevenção de litígios e resolução de conflitos."
+    if "imobili" in name_l or "itbi" in name_l:
+        return "Assessoria em operações, tributos e segurança jurídica imobiliária."
+    return "Atendimento personalizado com rigor técnico e linguagem acessível."
+
+
+def render_hero_caption(site_data: dict) -> str:
+    display_name = site_data.get("display_name") or site_data.get("business_name", "")
+    category = site_data.get("category", "")
+    if category:
+        return f"{display_name} · {category}"
+    return display_name
+
+
+def render_nav_content(site_data: dict) -> str:
+    if site_data.get("gallery") or site_data.get("highlights"):
+        return '<a href="#conteudo">Conteúdo</a>'
+    return ""
+
+
+def hero_primary_cta_label(site_data: dict, default_label: str) -> str:
+    whatsapp_url = (site_data.get("whatsapp_url") or "").strip()
+    if whatsapp_url and whatsapp_url not in {"#", "#contato"}:
+        return default_label
+    return "Acompanhar no Instagram"
+
+
+def render_hero_eyebrow(site_data: dict) -> str:
+    bio = f"{site_data.get('bio', '')} {site_data.get('subheadline', '')}"
+    oab_match = OAB_RE.search(bio)
+    category = site_data.get("category") or site_data.get("category_base", "")
+    if oab_match:
+        return f"{oab_match.group(0)} · {category or 'Advogado'}"
+    city = site_data.get("city", "")
+    if city and category:
+        return f"{category} · {city}"
+    return category or site_data.get("category_base", "Profissional")
+
+
+def render_hero_title_html(site_data: dict) -> str:
+    highlights = site_data.get("highlights") or []
+    if highlights:
+        hook = (highlights[0].get("title") or "").strip()
+        if len(hook) > 24:
+            words = hook.split()
+            line1: list[str] = []
+            length = 0
+            for word in words:
+                if length + len(word) > 52 and line1:
+                    break
+                line1.append(word)
+                length += len(word) + 1
+            rest = " ".join(words[len(line1) :])
+            first = " ".join(line1)
+            if rest:
+                return f"{html.escape(first)}\n<span>{html.escape(rest[:72])}</span>"
+            return html.escape(first)
+
+    display_name = site_data.get("display_name") or site_data.get("business_name", "")
+    category = site_data.get("category", "")
+    if category and category.lower() not in display_name.lower():
+        return f"{html.escape(display_name)}\n<span>{html.escape(category)}</span>"
+    return html.escape(display_name)
+
+
+def render_hero_stats_html(services: list[dict[str, str]]) -> str:
+    items = expand_services(services)[:3]
+    rows = []
+    for index, item in enumerate(items, start=1):
+        rows.append(
+            f"""
+            <div class="hero-stat">
+              <strong>{index:02d}</strong>
+              <span>{html.escape(item.get('name', 'Serviço'))}</span>
+            </div>
+            """
+        )
+    return f'<div class="hero__stats">{"".join(rows)}</div>'
+
+
+def render_secondary_cta_html(has_content: bool, instagram_url: str) -> str:
+    if has_content:
+        return '<a class="btn btn--ghost" href="#conteudo">Ver conteúdo em destaque</a>'
+    return (
+        f'<a class="btn btn--ghost" href="{html.escape(instagram_url)}" '
+        f'target="_blank" rel="noopener">Instagram</a>'
+    )
+
+
+def render_manifesto_section(site_data: dict) -> str:
+    highlights = site_data.get("highlights") or []
+    quote = ""
+    body = (site_data.get("subheadline") or site_data.get("bio") or "").strip()
+    if highlights:
+        highlight = highlights[0]
+        quote = (highlight.get("title") or "").strip()
+        body = (highlight.get("excerpt") or body).strip()
+    if not quote:
+        quote = body[:140]
+        body = (site_data.get("about") or body)[len(quote) :].strip() or body
+    if not quote:
+        return ""
+
+    return f"""
+    <section class="manifesto" aria-labelledby="manifesto-title">
+      <div class="manifesto__inner reveal">
+        <p class="manifesto__label" id="manifesto-title">Posicionamento</p>
+        <blockquote>{html.escape(quote)}</blockquote>
+        <p>{html.escape(body[:320])}</p>
+      </div>
+    </section>
+    """
+
+
+def render_areas_section(services: list[dict[str, str]]) -> str:
+    items = expand_services(services)[:3]
+    rows = []
+    for index, item in enumerate(items, start=1):
+        rows.append(
+            f"""
+            <article class="area-card">
+              <span class="area-card__num">{index:02d}</span>
+              <h3>{html.escape(item.get('name', 'Serviço'))}</h3>
+              <p>{html.escape(area_description(item.get('name', '')))}</p>
+            </article>
+            """
+        )
+    return f'<div class="areas-grid reveal">{"".join(rows)}</div>'
+
+
+def render_feature_content_section(site_data: dict) -> str:
+    gallery = site_data.get("gallery") or []
+    highlights = site_data.get("highlights") or []
+    item = gallery[0] if gallery else None
+    highlight = highlights[0] if highlights else {}
+
+    if item:
+        title = (highlight.get("title") or item.get("caption") or "Conteúdo em destaque").strip()
+        excerpt = (highlight.get("excerpt") or item.get("caption") or "").strip()
+        url = item.get("url") or site_data.get("instagram_url", "#")
+        image = item.get("src", "")
+        date = highlight.get("date", "")
+        meta = f"Instagram · {date}" if date else "Instagram"
+    elif highlight:
+        title = (highlight.get("title") or "Conteúdo em destaque").strip()
+        excerpt = (highlight.get("excerpt") or "").strip()
+        url = highlight.get("url") or site_data.get("instagram_url", "#")
+        image = site_data.get("hero_image") or site_data.get("avatar_image") or ""
+        meta = f"Instagram · {highlight.get('date', '')}".strip(" ·")
+    else:
+        return ""
+
+    image_html = (
+        f'<img src="{html.escape(image)}" alt="{html.escape(title[:120])}" loading="lazy" />'
+        if image
+        else ""
+    )
+    return f"""
+      <section class="section section--alt" id="conteudo">
+        <div class="container">
+          <div class="section-head reveal">
+            <p class="section-head__eyebrow">Conteúdo</p>
+            <h2 class="section-head__title">Publicação em destaque</h2>
+            <p class="section-head__lead">Trecho do conteúdo que resume a atuação profissional.</p>
+          </div>
+          <article class="feature-card reveal">
+            <div class="feature-card__media">{image_html}</div>
+            <div class="feature-card__body">
+              <p class="feature-card__meta">{html.escape(meta)}</p>
+              <h3>{html.escape(title[:120])}</h3>
+              <p>{html.escape(excerpt[:280])}</p>
+              <a href="{html.escape(url)}" target="_blank" rel="noopener">Ver no Instagram →</a>
+            </div>
+          </article>
+        </div>
+      </section>
+    """
+
+
+def render_about_panel_html(site_data: dict) -> str:
+    about = (site_data.get("about") or site_data.get("bio") or "").strip()
+    credentials: list[str] = []
+    bio = f"{site_data.get('bio', '')} {site_data.get('subheadline', '')}"
+    oab_match = OAB_RE.search(bio)
+    if oab_match:
+        credentials.append(oab_match.group(0))
+    credentials.extend(site_data.get("topics") or [])
+    for badge in site_data.get("trust_badges") or []:
+        if badge not in credentials:
+            credentials.append(badge)
+    credentials = credentials[:6]
+
+    chips = "".join(f"<span>{html.escape(item)}</span>" for item in credentials)
+    instagram_url = site_data.get("instagram_url", "#")
+    username = site_data.get("username", "")
+    return f"""
+      <div class="about-panel reveal">
+        <p>{html.escape(about)}</p>
+        <div class="about-credentials">{chips}</div>
+        <a class="about-link" href="{html.escape(instagram_url)}" target="_blank" rel="noopener">
+          Acompanhe @{html.escape(username)} no Instagram →
+        </a>
+      </div>
+    """
+
+
+def render_footer_extra(site_data: dict) -> str:
+    bio = f"{site_data.get('bio', '')} {site_data.get('subheadline', '')}"
+    oab_match = OAB_RE.search(bio)
+    return f" · {html.escape(oab_match.group(0))}" if oab_match else ""
+
+
+def render_wa_float_html(whatsapp_url: str) -> str:
+    if not whatsapp_url or whatsapp_url in {"#", "#contato"}:
+        return ""
+    return f"""
+    <a
+      class="wa-float"
+      href="{html.escape(whatsapp_url)}"
+      target="_blank"
+      rel="noopener"
+      aria-label="WhatsApp"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.881 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+        />
+      </svg>
+    </a>
+    """
+
+
 def hero_title(display_name: str, profile_style: str) -> str:
     name = html.escape(display_name.strip())
     if profile_style != "creator" or " " not in display_name.strip():
@@ -110,10 +403,14 @@ def services_intro(profile_style: str) -> str:
     return "Atendimento dedicado com clareza, estratégia e comunicação direta."
 
 
-def contact_intro(profile_style: str) -> str:
+def contact_intro(profile_style: str, *, has_whatsapp: bool = True) -> str:
     if profile_style == "creator":
-        return "Palestras, orientação jurídica ou parcerias — chame no WhatsApp."
-    return "Tire suas dúvidas, entenda suas opções e agende um atendimento pelo WhatsApp."
+        if has_whatsapp:
+            return "Palestras, orientação jurídica ou parcerias — chame no WhatsApp."
+        return "Palestras, orientação jurídica ou parcerias — chame no Instagram."
+    if has_whatsapp:
+        return "Tire suas dúvidas, entenda suas opções e agende um atendimento pelo WhatsApp."
+    return "Tire suas dúvidas e agende uma conversa pelo Instagram."
 
 
 THEMES = {
@@ -127,8 +424,8 @@ THEMES = {
     "professional": {
         "fonts": (
             "https://fonts.googleapis.com/css2?"
-            "family=Inter:wght@400;500;600;700"
-            "&family=Playfair+Display:wght@600;700&display=swap"
+            "family=Instrument+Serif:ital@0;1"
+            "&family=Sora:wght@400;500;600;700&display=swap"
         ),
     },
 }
@@ -353,20 +650,48 @@ def apply_site_template(template: str, site_data: dict) -> str:
     category_base = site_data.get("category_base", site_data.get("category", ""))
     theme = THEMES.get(profile_style, THEMES["professional"])
     services_eyebrow, services_title = services_labels(category_base, profile_style)
-    gallery = site_data.get("gallery", [])
-    highlights = site_data.get("highlights", [])
-    nav_reels = '<a href="#reels">Reels</a>' if gallery else ""
     display_name = site_data.get("display_name") or site_data.get(
         "headline", site_data.get("business_name", "")
     )
     avatar = site_data.get("avatar_image") or "assets/profile_pic.jpg"
     og_image = site_data.get("og_image") or avatar
     og_url = site_data.get("og_url") or site_data.get("publish_url") or ""
+    services = site_data.get("services", [])
+    gallery = site_data.get("gallery", [])
+    highlights = site_data.get("highlights", [])
+    whatsapp_url = (site_data.get("whatsapp_url") or "").strip()
+    has_whatsapp = bool(whatsapp_url and whatsapp_url not in {"#", "#contato"})
+    primary_url, primary_label = primary_cta(site_data)
+    has_content = bool(gallery or highlights)
+    feature_section = render_feature_content_section(site_data)
+
     replacements = {
         "{{PROFILE_STYLE}}": html.escape(profile_style),
         "{{BUSINESS_NAME}}": html.escape(site_data.get("business_name", "")),
         "{{DISPLAY_NAME}}": html.escape(display_name),
         "{{HERO_TITLE}}": hero_title(display_name, profile_style),
+        "{{HERO_TITLE_HTML}}": render_hero_title_html(site_data),
+        "{{HERO_EYEBROW}}": html.escape(render_hero_eyebrow(site_data)),
+        "{{HERO_CAPTION}}": html.escape(render_hero_caption(site_data)),
+        "{{HERO_STATS_HTML}}": render_hero_stats_html(services),
+        "{{NAV_BRAND}}": render_nav_brand(display_name),
+        "{{NAV_CONTENT}}": render_nav_content(site_data),
+        "{{PRIMARY_CTA_URL}}": html.escape(primary_url),
+        "{{PRIMARY_CTA_LABEL}}": html.escape(primary_label),
+        "{{HERO_PRIMARY_CTA_LABEL}}": html.escape(
+            hero_primary_cta_label(site_data, primary_label)
+        ),
+        "{{SECONDARY_CTA_HTML}}": render_secondary_cta_html(
+            has_content, site_data.get("instagram_url", "#")
+        ),
+        "{{CONTACT_CTA_URL}}": html.escape(primary_url),
+        "{{CONTACT_CTA_LABEL}}": html.escape(primary_label),
+        "{{MANIFESTO_SECTION}}": render_manifesto_section(site_data),
+        "{{AREAS_SECTION}}": render_areas_section(services),
+        "{{FEATURE_CONTENT_SECTION}}": feature_section,
+        "{{ABOUT_PANEL_HTML}}": render_about_panel_html(site_data),
+        "{{FOOTER_EXTRA}}": render_footer_extra(site_data),
+        "{{WA_FLOAT_HTML}}": render_wa_float_html(whatsapp_url),
         "{{CATEGORY}}": html.escape(site_data.get("category", "")),
         "{{HEADLINE}}": html.escape(site_data.get("headline", "")),
         "{{SUBHEADLINE}}": html.escape(site_data.get("subheadline", "")),
@@ -384,12 +709,14 @@ def apply_site_template(template: str, site_data: dict) -> str:
         "{{SERVICES_EYEBROW}}": html.escape(services_eyebrow),
         "{{SERVICES_TITLE}}": html.escape(services_title),
         "{{SERVICES_INTRO}}": html.escape(services_intro(profile_style)),
-        "{{CONTACT_INTRO}}": html.escape(contact_intro(profile_style)),
-        "{{SERVICES_HTML}}": render_services(site_data.get("services", []), profile_style),
+        "{{CONTACT_INTRO}}": html.escape(
+            contact_intro(profile_style, has_whatsapp=has_whatsapp)
+        ),
+        "{{SERVICES_HTML}}": render_services(services, profile_style),
         "{{TRUST_HTML}}": render_trust_badges(site_data.get("trust_badges", [])),
         "{{GALLERY_SECTION}}": render_gallery_section(gallery, profile_style),
         "{{HIGHLIGHTS_SECTION}}": render_highlights_section(highlights, profile_style),
-        "{{NAV_REELS}}": nav_reels,
+        "{{NAV_REELS}}": '<a href="#reels">Reels</a>' if gallery else "",
         "{{FONT_LINK}}": theme["fonts"],
         "{{THEME_OVERRIDE}}": render_theme_override(site_data),
         "{{SCHEMA_JSON}}": render_schema(site_data),
@@ -479,8 +806,7 @@ def generate_site_demo(output_dir: Path, site_data: dict) -> Path:
     copied = 1 if copy_profile_avatar(media_dir, assets_dir) else 0
     copied += copy_gallery_assets(media_dir, assets_dir, site_data.get("gallery", []))
 
-    for filename in ("script.js", "netlify.toml", "styles.css"):
-        shutil.copy2(SITE_TEMPLATE_DIR / filename, demo_dir / filename)
+    copy_site_template_files(demo_dir, include_netlify=True)
     favicon_bg, favicon_fg = favicon_colors(site_data, variant="site")
     write_favicon(
         demo_dir,
@@ -576,8 +902,7 @@ def generate_publish_bundle(output_dir: Path, site_data: dict) -> Path:
         else og_image
     )
 
-    shutil.copy2(SITE_TEMPLATE_DIR / "script.js", site_dir / "script.js")
-    shutil.copy2(SITE_TEMPLATE_DIR / "styles.css", site_dir / "styles.css")
+    copy_site_template_files(site_dir)
     favicon_bg, favicon_fg = favicon_colors(site_data, variant="site")
     write_favicon(
         site_dir,
