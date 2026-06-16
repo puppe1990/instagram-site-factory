@@ -79,9 +79,10 @@ class TestNetlifySlug:
 
 
 class TestApplyTemplates:
-    def test_site_template_replaces_placeholders(self):
+    def test_site_template_replaces_editorial_placeholders(self):
         site_data = {
             "business_name": "Teste",
+            "display_name": "Maria Silva",
             "category": "Advocacia",
             "category_base": "Advocacia",
             "profile_style": "professional",
@@ -95,14 +96,18 @@ class TestApplyTemplates:
             "seo_description": "Desc",
             "instagram_url": "https://instagram.com/x",
             "username": "x",
-            "services": [],
+            "services": [{"name": "Direito Civil", "price": "Sob consulta"}],
             "highlights": [],
             "gallery": [],
         }
-        template = "Nome: {{BUSINESS_NAME}} | {{SERVICES_TITLE}} | {{GALLERY_SECTION}}"
+        template = (
+            "{{NAV_BRAND}} | {{HERO_EYEBROW}} | {{AREAS_SECTION}} | "
+            "{{MANIFESTO_SECTION}} | {{WA_FLOAT_HTML}}"
+        )
         rendered = apply_site_template(template, site_data)
-        assert "Nome: Teste" in rendered
-        assert "Áreas de atuação" in rendered
+        assert "<strong>Maria</strong> Silva" in rendered
+        assert "area-card" in rendered
+        assert "wa-float" in rendered
 
     def test_linktree_renders_multiline_bio(self):
         site_data = {
@@ -194,9 +199,11 @@ class TestGenerateDemo:
 
         publish_html = (result["publish"] / "site" / "index.html").read_text(encoding="utf-8")
         assert "Cleverson Borges" in publish_html
-        assert "service-card" in publish_html
-        assert "Reels" in publish_html or "Galeria" in publish_html
+        assert "editorial-site" in publish_html
+        assert "area-card" in publish_html
+        assert "Onde atuo" in publish_html
         assert 'href="styles.css"' in publish_html
+        assert 'href="editorial.css"' in publish_html
         assert len(list((result["publish"] / "site" / "assets").glob("*_thumb.jpg"))) >= 0
         assert len(list((result["publish"] / "site" / "assets").glob("thumb.jpg"))) == 1
 
