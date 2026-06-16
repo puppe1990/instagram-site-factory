@@ -15,11 +15,46 @@
     <link href="{{FONT_LINK}}" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
     {{THEME_OVERRIDE}}
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("linktree-theme");
+          var theme =
+            stored ||
+            (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+          document.documentElement.dataset.theme = theme;
+        } catch (error) {
+          document.documentElement.dataset.theme = "dark";
+        }
+      })();
+    </script>
   </head>
   <body>
     <div class="demo-ribbon">
       Demonstração — link na bio gerado do Instagram @{{USERNAME}}
     </div>
+
+    <button
+      class="theme-toggle"
+      type="button"
+      aria-label="Alternar tema claro e escuro"
+      aria-pressed="false"
+    >
+      <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2" />
+        <path d="M12 20v2" />
+        <path d="M4.93 4.93l1.41 1.41" />
+        <path d="M17.66 17.66l1.41 1.41" />
+        <path d="M2 12h2" />
+        <path d="M20 12h2" />
+        <path d="M4.93 19.07l1.41-1.41" />
+        <path d="M17.66 6.34l1.41-1.41" />
+      </svg>
+      <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+      </svg>
+    </button>
 
     <main class="page">
       <header class="profile">

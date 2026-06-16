@@ -119,6 +119,27 @@ class TestApplyTemplates:
         rendered = apply_linktree_template(template, site_data, site_demo_path="site/index.html")
         assert "Linha 1\nLinha 2" in rendered
 
+    def test_linktree_includes_theme_toggle(self):
+        site_data = {
+            "business_name": "Teste",
+            "bio": "Bio",
+            "category": "Advocacia",
+            "profile_style": "professional",
+            "avatar_image": "assets/a.jpg",
+            "seo_description": "Desc",
+            "instagram_url": "https://instagram.com/x",
+            "username": "x",
+            "links": [],
+        }
+        template_path = Path(__file__).resolve().parents[1] / "templates" / "linktree-demo" / "index.html"
+        rendered = apply_linktree_template(
+            template_path.read_text(encoding="utf-8"),
+            site_data,
+            site_demo_path="site/index.html",
+        )
+        assert 'class="theme-toggle"' in rendered
+        assert 'localStorage.getItem("linktree-theme")' in rendered
+
     def test_ver_site_completo_opens_new_tab(self):
         html_out = render_links(
             [
